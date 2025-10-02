@@ -26,6 +26,7 @@ spring:
             client-id: ${GOOGLE_CLIENT_ID}
             client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
+              - openid
               - email
               - profile
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
@@ -41,3 +42,7 @@ jwt:
   secret: ${JWT_SECRET:changeme-super-secret-key}
   expiration: 3600000 # 1h
   refresh-expiration: 604800000 # 7 días
+
+logging:
+  level:
+    org.springframework.security: DEBUG
