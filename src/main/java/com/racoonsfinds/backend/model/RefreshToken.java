@@ -15,10 +15,6 @@ import lombok.Setter;
 @Table(name = "refresh_tokens")
 @Getter @Setter
 public class RefreshToken {
-    
-    public RefreshToken(String token2, User user2, LocalDateTime expiry) {
-        //TODO Auto-generated constructor stub
-    }
 
     @Id
     @Column(length = 36)
@@ -31,4 +27,14 @@ public class RefreshToken {
     private LocalDateTime createdAt;
 
     private LocalDateTime expiryAt;
+
+    public RefreshToken() {}
+
+    public RefreshToken(String token, User user, LocalDateTime expiryAt) {
+        this.token = token;
+        this.user = user;
+        this.expiryAt = expiryAt;
+        this.createdAt = LocalDateTime.now();
+    }
 }
+

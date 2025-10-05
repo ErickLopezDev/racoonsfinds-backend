@@ -1,15 +1,22 @@
 package com.racoonsfinds.backend.dto.auth;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@Getter @Setter
-public class AuthResponseDto{
-    public AuthResponseDto(Long id, String access, String token) {
-        //TODO Auto-generated constructor stub
-    }
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class AuthResponseDto {
     private Long userId;
     private String accessToken;
     private String refreshToken;
     private String tokenType = "Bearer";
+    
+    public AuthResponseDto(Long userId, String accessToken, String refreshToken) {
+    this.userId = userId;
+    this.accessToken = accessToken;
+    this.refreshToken = refreshToken;
+}
+
 }

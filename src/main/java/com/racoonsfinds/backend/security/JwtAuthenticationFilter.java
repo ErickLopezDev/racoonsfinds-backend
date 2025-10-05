@@ -21,12 +21,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
-    private final UserRepository userRepository;
 
     public JwtAuthenticationFilter(JwtUtil jwtUtil, RefreshTokenService refreshTokenService, UserRepository userRepository) {
         this.jwtUtil = jwtUtil;
         this.refreshTokenService = refreshTokenService;
-        this.userRepository = userRepository;
     }
 
     @Override

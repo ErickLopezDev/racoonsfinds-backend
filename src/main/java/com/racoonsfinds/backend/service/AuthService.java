@@ -5,6 +5,8 @@ import java.util.Random;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.racoonsfinds.backend.dto.auth.AuthResponseDto;
 import com.racoonsfinds.backend.dto.auth.login.LoginRequestDto;
@@ -17,7 +19,7 @@ import com.racoonsfinds.backend.security.JwtUtil;
 import com.racoonsfinds.backend.service.int_.EmailService;
 import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
-import jakarta.transaction.Transactional;
+
 
 @Service
 public class AuthService {
@@ -44,46 +46,69 @@ public class AuthService {
         this.refreshTokenService = refreshTokenService;
         this.emailService = emailService;
     }
-
-    @Transactional
-    public AuthResponseDto login(LoginRequestDto dto) {
-        var optUser = userRepository.findByEmail(dto.getEmail());
-        if (optUser.isEmpty()) {
-            optUser = userRepository.findByUsername(dto.getEmail());
-        }
-        if (optUser.isEmpty()) {
-            throw new RuntimeException("Credenciales inválidas");
-        }
-        User user = optUser.get();
-
-        // bloqueo por intentos
-        if (user.getFailedAttempts() != null && user.getFailedAttempts() >= maxFailedAttempts) {
-            if (user.getLastLogin() != null && user.getLastLogin().plusMinutes(lockMinutes).isAfter(LocalDateTime.now())) {
-                throw new RuntimeException("Cuenta bloqueada temporalmente por varios intentos fallidos. Intenta más tarde.");
-            } else {
-                // reset lock after time passed
-                user.setFailedAttempts(0);
-                userRepository.save(user);
-            }
-        }
-
-        if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            user.setFailedAttempts((user.getFailedAttempts() == null ? 0 : user.getFailedAttempts()) + 1);
-            user.setLastLogin(LocalDateTime.now());
-            userRepository.save(user);
-            throw new RuntimeException("Credenciales inválidas");
-        }
-
-        // login ok
-        user.setFailedAttempts(0);
-        user.setLastLogin(LocalDateTime.now());
-        userRepository.save(user);
-
-        String access = jwtUtil.generateToken(String.valueOf(user.getId()));
-        RefreshToken refresh = refreshTokenService.createRefreshToken(user);
-
-        return new AuthResponseDto(user.getId(), access, refresh.getToken());
+@Transactional(noRollbackFor = RuntimeException.class)
+public AuthResponseDto login(LoginRequestDto dto) {
+    var optUser = userRepository.findByEmail(dto.getEmail());
+    if (optUser.isEmpty()) {
+        optUser = userRepository.findByUsername(dto.getEmail());
     }
+    if (optUser.isEmpty()) {
+        throw new RuntimeException("Credenciales inválidas");
+    }
+
+    User user = optUser.get();
+
+    // --- Verificar bloqueo por intentos fallidos ---
+    if (user.getFailedAttempts() >= maxFailedAttempts) {
+        if (user.getLastLogin() != null && user.getLastLogin().plusMinutes(lockMinutes).isAfter(LocalDateTime.now())) {
+            throw new RuntimeException(
+                "Cuenta bloqueada temporalmente por varios intentos fallidos. Intenta nuevamente en " + lockMinutes + " minutos."
+            );
+        } else {
+            // Se desbloquea después del tiempo de espera
+            resetFailedAttempts(user);
+        }
+    }
+
+    // --- Validar contraseña ---
+    if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
+        incrementFailedAttempts(user); // ✅ guarda aunque se lance excepción
+        int remaining = Math.max(0, maxFailedAttempts - (user.getFailedAttempts() + 1));
+        String message = (remaining > 0)
+            ? "Contraseña incorrecta. Te quedan " + remaining + " intento(s) antes del bloqueo."
+            : "Cuenta bloqueada temporalmente por varios intentos fallidos.";
+        throw new RuntimeException(message);
+    }
+
+    // --- Verificar usuario verificado ---
+    if (!Boolean.TRUE.equals(user.getVerified())) {
+        throw new RuntimeException("Usuario no verificado. Revisa tu correo electrónico.");
+    }
+
+    // --- Login exitoso ---
+    resetFailedAttempts(user);
+
+    String access = jwtUtil.generateToken(String.valueOf(user.getId()));
+    RefreshToken refresh = refreshTokenService.createRefreshToken(user);
+
+    return new AuthResponseDto(user.getId(), access, refresh.getToken());
+}
+
+@Transactional(propagation = Propagation.REQUIRES_NEW)
+public void incrementFailedAttempts(User user) {
+    user.setFailedAttempts(user.getFailedAttempts() + 1);
+    user.setLastLogin(LocalDateTime.now());
+    userRepository.save(user);
+}
+
+@Transactional(propagation = Propagation.REQUIRES_NEW)
+public void resetFailedAttempts(User user) {
+    user.setFailedAttempts(0);
+    user.setLastLogin(LocalDateTime.now());
+    userRepository.save(user);
+}
+
+
 
     @Transactional
     public void register(RegisterRequestDto dto) {

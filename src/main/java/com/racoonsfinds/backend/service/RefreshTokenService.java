@@ -25,16 +25,16 @@ public class RefreshTokenService {
         this.refreshTokenDuration = Duration.ofMinutes(refreshTokenDurationMinutes); // Ej: 30 dias = 43200
     }
 
-    @Transactional
-    public RefreshToken createRefreshToken(User user) {
-        // eliminar antiguos para simplicity (opcional)
-        refreshTokenRepository.deleteByUser(user);
+        @Transactional
+        public RefreshToken createRefreshToken(User user) {
+            refreshTokenRepository.deleteByUser(user);
 
-        String token = UUID.randomUUID().toString();
-        LocalDateTime expiry = LocalDateTime.now().plus(refreshTokenDuration);
-        RefreshToken refreshToken = new RefreshToken(token, user, expiry);
-        return refreshTokenRepository.save(refreshToken);
-    }
+            String token = UUID.randomUUID().toString();
+            LocalDateTime expiry = LocalDateTime.now().plus(refreshTokenDuration);
+            RefreshToken refreshToken = new RefreshToken(token, user, expiry);
+            return refreshTokenRepository.save(refreshToken);
+        }
+
 
     public boolean isValid(RefreshToken token) {
         return token != null && token.getExpiryAt().isAfter(LocalDateTime.now());
