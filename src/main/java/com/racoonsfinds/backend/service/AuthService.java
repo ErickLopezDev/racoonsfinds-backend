@@ -180,4 +180,46 @@ public class AuthService {
         int number = rnd.nextInt(900_000) + 100_000; // asegura 6 dígitos
         return String.valueOf(number);
     }
+    @Transactional
+public void forgotPassword(String email) {
+    var optUser = userRepository.findByEmail(email);
+    if (optUser.isEmpty()) throw new NotFoundException("No existe un usuario con ese correo.");
+
+    User user = optUser.get();
+
+    String code = generate6DigitCode();
+    user.setVerificationCode(code);
+    user.setCodeExpiry(LocalDateTime.now().plusMinutes(verificationCodeExpiryMinutes));
+    userRepository.save(user);
+
+    String subject = "Recuperación de contraseña";
+    String body = String.format("""
+        <p>Recibimos una solicitud para restablecer tu contraseña.</p>
+        <p>Tu código de verificación es: <b>%s</b> (válido por %d minutos).</p>
+        <p>Si no realizaste esta solicitud, puedes ignorar este mensaje.</p>
+    """, code, verificationCodeExpiryMinutes);
+
+    emailService.sendPasswordResetEmail(user.getEmail(), subject, body);
+}
+
+@Transactional
+public void resetPassword(Long userId, String code, String newPassword) {
+    var optUser = userRepository.findById(userId);
+    if (optUser.isEmpty()) throw new NotFoundException("Usuario no encontrado.");
+
+    User user = optUser.get();
+
+    if (user.getVerificationCode() == null || user.getCodeExpiry().isBefore(LocalDateTime.now())) {
+        throw new ForbiddenException("Código inválido o expirado.");
+    }
+
+    if (!user.getVerificationCode().equals(code)) {
+        throw new UnauthorizedException("El código ingresado no es válido.");
+    }
+
+    user.setPassword(passwordEncoder.encode(newPassword));
+    user.setVerificationCode(null);
+    user.setCodeExpiry(null);
+    userRepository.save(user);
+}
 }

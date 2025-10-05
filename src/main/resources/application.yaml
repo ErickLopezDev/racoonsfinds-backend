@@ -46,3 +46,7 @@ jwt:
 logging:
   level:
     org.springframework.security: DEBUG
+
+resend:
+  api-key: re_XZvgUHUM_49eewpZxgyD299nLbMnGYqPu
+  from: onboarding@resend.dev

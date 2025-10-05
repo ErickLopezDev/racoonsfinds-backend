@@ -20,7 +20,7 @@ public class RefreshTokenService {
     private final Duration refreshTokenDuration;
 
     public RefreshTokenService(RefreshTokenRepository refreshTokenRepository,
-                               @Value("${auth.refresh-expiration:604800000}") long refreshTokenDurationMinutes) {
+                               @Value("${auth.refresh-expiration:43200}") long refreshTokenDurationMinutes) {
         this.refreshTokenRepository = refreshTokenRepository;
         this.refreshTokenDuration = Duration.ofMinutes(refreshTokenDurationMinutes); // Ej: 30 dias = 43200
     }

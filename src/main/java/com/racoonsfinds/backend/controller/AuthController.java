@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.auth.AuthResponseDto;
+import com.racoonsfinds.backend.dto.auth.ForgotPasswordDto;
+import com.racoonsfinds.backend.dto.auth.ResetPasswordDto;
 import com.racoonsfinds.backend.dto.auth.login.LoginRequestDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
 import com.racoonsfinds.backend.dto.auth.verify.VerifyCodeDto;
@@ -47,5 +49,16 @@ public class AuthController {
     public ResponseEntity<ApiResponse<Void>> resend(@PathVariable Long userId) {
         authService.resendVerification(userId);
         return ResponseUtil.ok("Código de verificación reenviado correctamente");
+    }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestBody ForgotPasswordDto dto) {
+        authService.forgotPassword(dto.getEmail());
+        return ResponseUtil.ok("Se ha enviado un código de recuperación a tu correo electrónico.");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestBody ResetPasswordDto dto) {
+        authService.resetPassword(dto.getUserId(), dto.getCode(), dto.getNewPassword());
+        return ResponseUtil.ok("Contraseña actualizada correctamente.");
     }
 }

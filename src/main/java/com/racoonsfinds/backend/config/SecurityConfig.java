@@ -17,37 +17,32 @@ import com.racoonsfinds.backend.security.JwtAuthenticationFilter;
 import com.racoonsfinds.backend.security.JwtUtil;
 import com.racoonsfinds.backend.service.RefreshTokenService;
 
+import lombok.AllArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
+@AllArgsConstructor
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
 
-    public SecurityConfig(JwtUtil jwtUtil, RefreshTokenService refreshTokenService, UserRepository userRepository) {
-        this.jwtUtil = jwtUtil;
-        this.refreshTokenService = refreshTokenService;
-        this.userRepository = userRepository;
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtUtil, refreshTokenService, userRepository);
+
+        return http
+            .csrf(csrf -> csrf.disable())
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/error").permitAll()
+                .anyRequest().authenticated()
+            )
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+            .build();
     }
-@Bean
-public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-    JwtAuthenticationFilter jwtFilter = new JwtAuthenticationFilter(jwtUtil, refreshTokenService, userRepository);
-
-    return http
-        .csrf(csrf -> csrf.disable())
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/error").permitAll()
-            .anyRequest().authenticated()
-        )
-        .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
-        .build();
-}
-
-
-
-    // ✅ Bean necesario para autenticación manual en el servicio de login
+    
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
