@@ -20,9 +20,9 @@ public class RefreshTokenService {
     private final Duration refreshTokenDuration;
 
     public RefreshTokenService(RefreshTokenRepository refreshTokenRepository,
-                               @Value("${auth.refresh-expiration:43200}") long refreshTokenDurationMinutes) {
+                               @Value("${security.jwt.refresh-expiration}") long refreshTokenDurationMinutes) {
         this.refreshTokenRepository = refreshTokenRepository;
-        this.refreshTokenDuration = Duration.ofMinutes(refreshTokenDurationMinutes); // Ej: 30 dias = 43200
+        this.refreshTokenDuration = Duration.ofMinutes(refreshTokenDurationMinutes); 
     }
 
         @Transactional

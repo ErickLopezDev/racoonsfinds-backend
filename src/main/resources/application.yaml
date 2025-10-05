@@ -8,15 +8,6 @@ spring:
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: update # en prod usar validate o none
-    show-sql: true # logs de queries en dev
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-
   # Auth2
   # security:
   #   oauth2:
@@ -38,15 +29,16 @@ spring:
   #           user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
   #           user-name-attribute: sub
 
-jwt:
-  secret: ${JWT_SECRET}
-  expiration: 3600000 # 1h
-  refresh-expiration: 604800000 # 7 días
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 3600000
+    refresh-expiration: 10080
 
 logging:
   level:
     org.springframework.security: DEBUG
 
 resend:
-  api-key: re_XZvgUHUM_49eewpZxgyD299nLbMnGYqPu
-  from: onboarding@resend.dev
+  api-key: ${RESEND_API_KEY}
+  from: ${RESEND_FROM}

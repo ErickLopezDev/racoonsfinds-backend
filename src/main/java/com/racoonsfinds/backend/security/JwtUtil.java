@@ -1,6 +1,8 @@
 package com.racoonsfinds.backend.security;
 
 import io.jsonwebtoken.*;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.util.Date;
 import java.util.function.Function;
@@ -10,15 +12,15 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtil {
 
-  // TODO: agregar .env
-    private final String jwtSecret = "replace_with_env_secret_key_minimum_256_bits_long_for_hs256";
-    private final long jwtExpirationMs = 1000L * 60 * 15; // 15 minutos (ajusta)
+    private final String jwtSecret;
+    private final long jwtExpirationMs;
+    private final Key key;
 
-    private Key key;
-
-    public JwtUtil() {
-        // clave generada desde la semilla (en prod lee de env)
-        this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    public JwtUtil(@Value("${security.jwt.secret}") String jwtSecret,
+                   @Value("${security.jwt.expiration}") long jwtExpirationMs) {
+        this.jwtSecret = jwtSecret;
+        this.jwtExpirationMs = jwtExpirationMs;
+        this.key = Keys.hmacShaKeyFor(this.jwtSecret.getBytes());
     }
 
     public String generateToken(String subject) {
