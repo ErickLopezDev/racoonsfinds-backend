@@ -4,17 +4,25 @@ import java.time.LocalDate;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.Data;
 
-public record RegisterRequestDto(
-    @NotBlank(message = "El email es obligatorio")
-    @Email(message = "Formato de email inválido")
-    String email,
+@Data
+public class RegisterRequestDto{
+    @NotBlank
+    @Size(max = 45)
+    private String username;
 
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener mínimo 6 caracteres")
-    String password,
+    @NotBlank
+    @Email
+    @Size(max = 45)
+    private String email;
 
-    @NotBlank(message = "La fecha de nacimiento es obligatoria")
-    LocalDate birthDate
-) {}
+    @NotBlank
+    @Size(min = 8, max = 70)
+    private String password;
+
+    @NotNull
+    private LocalDate birthDate;
+}

@@ -1,6 +1,8 @@
 package com.racoonsfinds.backend.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -8,34 +10,40 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.racoonsfinds.backend.dto.auth.AuthResponseDto;
 import com.racoonsfinds.backend.dto.auth.login.LoginRequestDto;
-import com.racoonsfinds.backend.dto.auth.login.OAuth2RequestDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
+import com.racoonsfinds.backend.dto.auth.verify.VerifyCodeDto;
 import com.racoonsfinds.backend.service.AuthService;
 
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthService authService;
-
-    public AuthController(AuthService authService) {
-        this.authService = authService;
-    }
+    @Autowired
+    private AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponseDto> register(@RequestBody @Valid RegisterRequestDto request) {
-        return ResponseEntity.ok(authService.register(request));
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequestDto dto) {
+        authService.register(dto);
+        return ResponseEntity.ok().body("Usuario registrado. Revisa tu correo para confirmar.");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDto> login(@RequestBody @Valid LoginRequestDto request) {
-        return ResponseEntity.ok(authService.login(request));
+    public ResponseEntity<AuthResponseDto> login(@Valid @RequestBody LoginRequestDto dto) {
+        AuthResponseDto resp = authService.login(dto);
+        return ResponseEntity.ok(resp);
     }
 
-    @PostMapping("/oauth2/google")
-    public ResponseEntity<AuthResponseDto> oauth2Login(@RequestBody @Valid OAuth2RequestDto request) {
-        return ResponseEntity.ok(authService.oauth2Login(request));
+    @PostMapping("/verify")
+    public ResponseEntity<?> verify(@Valid @RequestBody VerifyCodeDto dto) {
+        authService.verifyCode(dto);
+        return ResponseEntity.ok("Verificado correctamente");
+    }
+
+    @PostMapping("/resend/{userId}")
+    public ResponseEntity<?> resend(@PathVariable Long userId) {
+        authService.resendVerification(userId);
+        return ResponseEntity.ok("Código reenviado");
     }
 }
