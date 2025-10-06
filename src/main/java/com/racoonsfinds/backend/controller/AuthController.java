@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.auth.AuthResponseDto;
-import com.racoonsfinds.backend.dto.auth.ForgotPasswordDto;
-import com.racoonsfinds.backend.dto.auth.ResetPasswordDto;
 import com.racoonsfinds.backend.dto.auth.login.LoginRequestDto;
+import com.racoonsfinds.backend.dto.auth.password.ForgotPasswordDto;
+import com.racoonsfinds.backend.dto.auth.password.ResetPasswordDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
 import com.racoonsfinds.backend.dto.auth.verify.VerifyCodeDto;
 import com.racoonsfinds.backend.service.AuthService;

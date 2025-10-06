@@ -1,4 +1,4 @@
-package com.racoonsfinds.backend.dto.auth;
+package com.racoonsfinds.backend.dto.auth.password;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
