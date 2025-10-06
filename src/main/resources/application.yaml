@@ -8,36 +8,37 @@ spring:
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-  jpa:
-    hibernate:
-      ddl-auto: update # en prod usar validate o none
-    show-sql: true # logs de queries en dev
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+  # Auth2
+  # security:
+  #   oauth2:
+  #     client:
+  #       registration:
+  #         google:
+  #           client-id: ${GOOGLE_CLIENT_ID}
+  #           client-secret: ${GOOGLE_CLIENT_SECRET}
+  #           scope:
+  #             - openid
+  #             - email
+  #             - profile
+  #           redirect-uri: "{baseUrl}/login/oauth2/code/google"
+  #           authorization-grant-type: authorization_code
+  #       provider:
+  #         google:
+  #           authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+  #           token-uri: https://oauth2.googleapis.com/token
+  #           user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+  #           user-name-attribute: sub
 
-  # Seguridad - JWT + OAuth2
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope:
-              - email
-              - profile
-            redirect-uri: "{baseUrl}/login/oauth2/code/google"
-            authorization-grant-type: authorization_code
-        provider:
-          google:
-            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
-            token-uri: https://oauth2.googleapis.com/token
-            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
-            user-name-attribute: sub
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 3600000
+    refresh-expiration: 10080
 
-jwt:
-  secret: ${JWT_SECRET:changeme-super-secret-key}
-  expiration: 3600000 # 1h
-  refresh-expiration: 604800000 # 7 días
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+resend:
+  api-key: ${RESEND_API_KEY}
+  from: ${RESEND_FROM}

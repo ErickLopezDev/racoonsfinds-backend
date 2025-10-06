@@ -1,0 +1,7 @@
+services:
+  backend-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    environment:
+      SPRING_PROFILES_ACTIVE: test

@@ -1,0 +1,17 @@
+package com.racoonsfinds.backend.dto.auth.login;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@Data
+@AllArgsConstructor
+public class LoginRequestDto{
+    @NotBlank(message = "El email es obligatorio")
+    @Email(message = "Formato de email inválido")
+    String email;
+
+    @NotBlank(message = "La contraseña es obligatoria")
+    String password;
+}
