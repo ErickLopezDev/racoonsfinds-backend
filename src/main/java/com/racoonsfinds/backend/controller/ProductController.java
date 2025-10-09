@@ -46,10 +46,9 @@ public class ProductController {
             @PathVariable Long id,
             @RequestPart(value = "file", required = false) MultipartFile file,
             @RequestPart("product") String productJson) throws IOException {
-        // Aseguramos que el json tenga el id (o podríamos inyectarlo)
-        ProductResponseDto dto = productService.updateProduct(file, productJson);
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(productService.updateProduct(id, file, productJson));
     }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDto> get(@PathVariable Long id) {

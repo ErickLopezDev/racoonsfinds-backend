@@ -52,6 +52,9 @@ public class Product {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @jakarta.persistence.Version
+    private Long version;
+
     // @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     // private List<Cart> cart;
 

@@ -36,12 +36,21 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/v3/api-docs/**", "/swagger-ui/**", "/error").permitAll()
+                // Rutas públicas
+                .requestMatchers(
+                    "/api/auth/**",       // login, register, refresh, etc
+                    "/api/products",      
+                    "/api/products/**",   
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/error"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
             .build();
     }
+
     
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {

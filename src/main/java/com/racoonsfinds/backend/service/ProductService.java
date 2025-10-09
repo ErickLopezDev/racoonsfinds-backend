@@ -20,6 +20,7 @@ import com.racoonsfinds.backend.repository.CategoryRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
+import com.racoonsfinds.backend.shared.utils.AuthUtil;
 import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
 import lombok.AllArgsConstructor;
@@ -34,110 +35,127 @@ public class ProductService {
     private final S3Service s3Service;
     private final ObjectMapper objectMapper;
 
-    /**
-     * Crea un producto desde multipart: recibe 'file' y 'product' (json string)
-     */
+    
+
     @Transactional
     public ProductResponseDto createProduct(MultipartFile file, String productJson) throws IOException {
         ProductRequestDto req = objectMapper.readValue(productJson, ProductRequestDto.class);
 
-        Product product = new Product();
-        // Mapea campos simples desde request a entity usando MapperUtil
-        MapperUtil.map(req, product);
-
-        // Set fechas / defaults
+        Product product = MapperUtil.map(req, Product.class);
         product.setCreatedDate(LocalDate.now());
         product.setEliminado(false);
 
-        // Asigna category si existe
+        // === Usuario autenticado ===
+        Long userId = AuthUtil.getAuthenticatedUserId();
+        if (userId == null) {
+            throw new ResourceNotFoundException("Authenticated user not found");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID " + userId));
+        product.setUser(user);
+
+        // === Categoría ===
         if (req.getCategoryId() != null) {
             Category category = categoryRepository.findById(req.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found " + req.getCategoryId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
             product.setCategory(category);
         }
 
-        // Asigna user si existe
-        if (req.getUserId() != null) {
-            User user = userRepository.findById(req.getUserId())
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found " + req.getUserId()));
-            product.setUser(user);
-        }
-
-        // Si viene archivo lo subimos a S3 y guardamos la key
+        // === Imagen S3 ===
         if (file != null && !file.isEmpty()) {
             String key = s3Service.uploadFile(file, "products");
             product.setImage(key);
         }
 
         Product saved = productRepository.save(product);
-        ProductResponseDto dto = MapperUtil.map(saved, ProductResponseDto.class);
-
-        // Convertimos 'image' key a URL accesible (si quieres)
-        if (saved.getImage() != null) {
-            dto.setImage(s3Service.getFileUrl(saved.getImage()));
-        }
-
-        // Seteamos categoryId y userId en DTO
-        if (saved.getCategory() != null) dto.setCategoryId(saved.getCategory().getId());
-        if (saved.getUser() != null) dto.setUserId(saved.getUser().getId());
-
-        return dto;
-    }
-
-    public ProductResponseDto getById(Long id) {
-        Product p = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found " + id));
-        ProductResponseDto dto = MapperUtil.map(p, ProductResponseDto.class);
-        if (p.getImage() != null) dto.setImage(s3Service.getFileUrl(p.getImage()));
-        if (p.getCategory() != null) dto.setCategoryId(p.getCategory().getId());
-        if (p.getUser() != null) dto.setUserId(p.getUser().getId());
-        return dto;
+        return mapToDto(saved);
     }
 
     public List<ProductResponseDto> findAll() {
-        return productRepository.findAll().stream().map(p -> {
-            ProductResponseDto d = MapperUtil.map(p, ProductResponseDto.class);
-            if (p.getImage() != null) d.setImage(s3Service.getFileUrl(p.getImage()));
-            if (p.getCategory() != null) d.setCategoryId(p.getCategory().getId());
-            if (p.getUser() != null) d.setUserId(p.getUser().getId());
-            return d;
-        }).collect(Collectors.toList());
+        return productRepository.findAll()
+                .stream()
+                .map(this::mapToDto)
+                .collect(Collectors.toList());
+    }
+
+    public ProductResponseDto getById(Long id) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + id));
+        return mapToDto(product);
     }
 
     @Transactional
-    public ProductResponseDto updateProduct(MultipartFile file, String productJson) throws IOException {
+    public ProductResponseDto updateProduct(Long id, MultipartFile file, String productJson) throws IOException {
         ProductUpdateRequest req = objectMapper.readValue(productJson, ProductUpdateRequest.class);
 
+        // El ID de la ruta siempre manda
+        if (req.getId() == null) {
+            req.setId(id);
+        }
+
         Product existing = productRepository.findById(req.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found " + req.getId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + req.getId()));
 
-        // map fields from request to entity
-        MapperUtil.map(req, existing);
+        // ✅ Actualizamos manualmente los campos simples (sin tocar relaciones ni ID)
+        if (req.getName() != null) existing.setName(req.getName());
+        if (req.getStock() != null) existing.setStock(req.getStock());
+        if (req.getPrice() != null) existing.setPrice(req.getPrice());
+        if (req.getDescription() != null) existing.setDescription(req.getDescription());
+        if (req.getEliminado() != null) existing.setEliminado(req.getEliminado());
 
-        // check category change
+        // ✅ Actualizamos categoría solo si viene un ID válido
         if (req.getCategoryId() != null) {
             Category cat = categoryRepository.findById(req.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found " + req.getCategoryId()));
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
             existing.setCategory(cat);
         }
 
-        // if new file -> upload and set new key
+        // ✅ Si se envía un nuevo archivo, se reemplaza la imagen
         if (file != null && !file.isEmpty()) {
             String key = s3Service.uploadFile(file, "products");
             existing.setImage(key);
         }
 
+        // Guardamos los cambios
         Product saved = productRepository.save(existing);
-        ProductResponseDto dto = MapperUtil.map(saved, ProductResponseDto.class);
-        if (saved.getImage() != null) dto.setImage(s3Service.getFileUrl(saved.getImage()));
-        if (saved.getCategory() != null) dto.setCategoryId(saved.getCategory().getId());
-        if (saved.getUser() != null) dto.setUserId(saved.getUser().getId());
-        return dto;
+        return mapToDto(saved);
     }
 
+
+    @Transactional
     public void delete(Long id) {
         Product p = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found " + id));
-        productRepository.delete(p);
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + id));
+
+        // Si ya está eliminado, no hacemos nada
+        if (Boolean.TRUE.equals(p.getEliminado())) {
+            return;
+        }
+
+        // Marcamos como eliminado (borrado lógico)
+        p.setEliminado(true);
+        productRepository.save(p);
+    }
+
+
+    // === PRIVATE MAPPER ===
+    private ProductResponseDto mapToDto(Product p) {
+        ProductResponseDto dto = MapperUtil.map(p, ProductResponseDto.class);
+
+        if (p.getImage() != null)
+            dto.setImage(s3Service.getFileUrl(p.getImage()));
+
+        if (p.getCategory() != null) {
+            dto.setCategoryId(p.getCategory().getId());
+            dto.setCategoryName(p.getCategory().getName());
+        }
+
+        if (p.getUser() != null) {
+            dto.setUserId(p.getUser().getId());
+            dto.setUserName(p.getUser().getUsername());
+        }
+
+        return dto;
     }
 }
