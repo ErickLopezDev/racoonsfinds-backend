@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ProductResponseDto {
-    private Integer id;
+    private Long id;
     private String name;
     private Integer stock;
     private String image;
@@ -21,8 +21,8 @@ public class ProductResponseDto {
     private String description;
     private LocalDate createdDate;
     private Boolean eliminado;
-    private Integer categoryId;
+    private Long categoryId;
     private String categoryName;
-    private Integer userId;
+    private Long userId;
     private String userName;
 }

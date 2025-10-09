@@ -1,7 +1,6 @@
 package com.racoonsfinds.backend.dto.products;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
@@ -33,9 +32,9 @@ public class ProductRequestDto{
     @Size(max = 750, message = "Description must not exceed 750 characters")
     private String description;
 
-    private LocalDate createdDate;
+    // private LocalDate createdDate;
 
-    private Boolean eliminado;
+    // private Boolean eliminado;
 
     @NotNull(message = "Category ID is required")
     private Long categoryId;

@@ -117,11 +117,16 @@
     <artifactId>resend-java</artifactId>
     <version>3.0.0</version>
 </dependency>
-<dependency>
+<!-- <dependency>
         <groupId>com.amazonaws</groupId>
         <artifactId>aws-java-sdk-s3</artifactId>
         <version>1.12.26</version>
-    </dependency>
+    </dependency> -->
+		<dependency>
+			<groupId>software.amazon.awssdk</groupId>
+			<artifactId>s3</artifactId>
+			<version>2.29.43</version>
+		</dependency>
 	</dependencies>
 
 	<build>

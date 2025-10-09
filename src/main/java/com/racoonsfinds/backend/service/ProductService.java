@@ -1,146 +1,143 @@
 package com.racoonsfinds.backend.service;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.racoonsfinds.backend.dto.products.ProductRequestDto;
 import com.racoonsfinds.backend.dto.products.ProductResponseDto;
+import com.racoonsfinds.backend.dto.products.ProductUpdateRequest;
 import com.racoonsfinds.backend.model.Category;
 import com.racoonsfinds.backend.model.Product;
+import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.CategoryRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
+import com.racoonsfinds.backend.repository.UserRepository;
+import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
+import lombok.AllArgsConstructor;
+
 @Service
+@AllArgsConstructor
 public class ProductService {
 
-    @Autowired
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final UserRepository userRepository;
+    private final S3Service s3Service;
+    private final ObjectMapper objectMapper;
 
-    @Autowired
-    private CategoryRepository categoryRepository;
+    /**
+     * Crea un producto desde multipart: recibe 'file' y 'product' (json string)
+     */
+    @Transactional
+    public ProductResponseDto createProduct(MultipartFile file, String productJson) throws IOException {
+        ProductRequestDto req = objectMapper.readValue(productJson, ProductRequestDto.class);
 
-    @Autowired
-    private S3Service s3Service;
+        Product product = new Product();
+        // Mapea campos simples desde request a entity usando MapperUtil
+        MapperUtil.map(req, product);
 
-    // Create a new product with optional image
-    public ProductResponseDto createProduct(ProductRequestDto productRequestDTO, MultipartFile image) {
-        // Validate category
-        Category category = categoryRepository.findById(productRequestDTO.getCategoryId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with ID: " + productRequestDTO.getCategoryId()));
-
-        // Map DTO to entity
-        Product product = MapperUtil.map(productRequestDTO, Product.class);
-        product.setCategory(category);
+        // Set fechas / defaults
+        product.setCreatedDate(LocalDate.now());
         product.setEliminado(false);
-        
-        // Set current date if not provided
-        if (product.getCreatedDate() == null) {
-            product.setCreatedDate(LocalDate.now());
+
+        // Asigna category si existe
+        if (req.getCategoryId() != null) {
+            Category category = categoryRepository.findById(req.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found " + req.getCategoryId()));
+            product.setCategory(category);
         }
 
-        // Handle image upload
-        if (image != null && !image.isEmpty()) {
-            String imageUrl = s3Service.uploadFile(image);
-            product.setImage(imageUrl);
+        // Asigna user si existe
+        if (req.getUserId() != null) {
+            User user = userRepository.findById(req.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found " + req.getUserId()));
+            product.setUser(user);
         }
 
-        // Save product
-        Product savedProduct = productRepository.save(product);
-
-        // Map entity to response DTO
-        ProductResponseDto responseDTO = MapperUtil.map(savedProduct, ProductResponseDto.class);
-        responseDTO.setCategoryName(category.getName());
-        responseDTO.setImage(savedProduct.getImage()); // Ensure image URL is set in DTO
-        return responseDTO;
-    }
-
-    // Get a product by ID
-    public ProductResponseDto getProductById(Long id) {
-        Product product = productRepository.findById(id)
-                .filter(p -> !p.getEliminado()) // Exclude soft-deleted products
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with ID: " + id));
-
-        ProductResponseDto responseDTO = MapperUtil.map(product, ProductResponseDto.class);
-        responseDTO.setCategoryName(product.getCategory() != null ? product.getCategory().getName() : null);
-        responseDTO.setImage(product.getImage()); // Include image URL
-        return responseDTO;
-    }
-
-    // Get all products
-    public List<ProductResponseDto> getAllProducts() {
-        List<Product> products = productRepository.findAllByEliminadoFalse();
-        return MapperUtil.mapList(products, ProductResponseDto.class).stream()
-                .map(dto -> {
-                    Optional<Product> productOpt = products.stream()
-                            .filter(p -> p.getId().equals(dto.getId()))
-                            .findFirst();
-                    if (productOpt.isPresent()) {
-                        Product product = productOpt.get();
-                        dto.setCategoryName(product.getCategory() != null ? product.getCategory().getName() : null);
-                        dto.setImage(product.getImage());
-                    }
-                    return dto;
-                })
-                .collect(Collectors.toList());
-    }
-
-    // Update a product with optional new image
-    public ProductResponseDto updateProduct(Long id, ProductRequestDto productRequestDTO, MultipartFile image) {
-        // Find existing product
-        Product product = productRepository.findById(id)
-                .filter(p -> !p.getEliminado())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with ID: " + id));
-
-        // Validate category
-        Category category = categoryRepository.findById(productRequestDTO.getCategoryId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found with ID: " + productRequestDTO.getCategoryId()));
-
-        // Map DTO to existing entity
-        MapperUtil.map(productRequestDTO, product);
-        product.setCategory(category);
-
-        // Handle image update
-        if (image != null && !image.isEmpty()) {
-            // Delete old image if exists
-            if (product.getImage() != null) {
-                s3Service.deleteFile(product.getImage());
-            }
-            // Upload new image
-            String newImageUrl = s3Service.uploadFile(image);
-            product.setImage(newImageUrl);
+        // Si viene archivo lo subimos a S3 y guardamos la key
+        if (file != null && !file.isEmpty()) {
+            String key = s3Service.uploadFile(file, "products");
+            product.setImage(key);
         }
 
-        // Save updated product
-        Product updatedProduct = productRepository.save(product);
+        Product saved = productRepository.save(product);
+        ProductResponseDto dto = MapperUtil.map(saved, ProductResponseDto.class);
 
-        // Map entity to response DTO
-        ProductResponseDto responseDTO = MapperUtil.map(updatedProduct, ProductResponseDto.class);
-        responseDTO.setCategoryName(category.getName());
-        responseDTO.setImage(updatedProduct.getImage());
-        return responseDTO;
+        // Convertimos 'image' key a URL accesible (si quieres)
+        if (saved.getImage() != null) {
+            dto.setImage(s3Service.getFileUrl(saved.getImage()));
+        }
+
+        // Seteamos categoryId y userId en DTO
+        if (saved.getCategory() != null) dto.setCategoryId(saved.getCategory().getId());
+        if (saved.getUser() != null) dto.setUserId(saved.getUser().getId());
+
+        return dto;
     }
 
-    // Soft delete a product and remove image from S3
-    public void deleteProduct(Long id) {
-        Product product = productRepository.findById(id)
-                .filter(p -> !p.getEliminado())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found with ID: " + id));
-        
-        // Delete image from S3 if exists
-        if (product.getImage() != null) {
-            s3Service.deleteFile(product.getImage());
+    public ProductResponseDto getById(Long id) {
+        Product p = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found " + id));
+        ProductResponseDto dto = MapperUtil.map(p, ProductResponseDto.class);
+        if (p.getImage() != null) dto.setImage(s3Service.getFileUrl(p.getImage()));
+        if (p.getCategory() != null) dto.setCategoryId(p.getCategory().getId());
+        if (p.getUser() != null) dto.setUserId(p.getUser().getId());
+        return dto;
+    }
+
+    public List<ProductResponseDto> findAll() {
+        return productRepository.findAll().stream().map(p -> {
+            ProductResponseDto d = MapperUtil.map(p, ProductResponseDto.class);
+            if (p.getImage() != null) d.setImage(s3Service.getFileUrl(p.getImage()));
+            if (p.getCategory() != null) d.setCategoryId(p.getCategory().getId());
+            if (p.getUser() != null) d.setUserId(p.getUser().getId());
+            return d;
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public ProductResponseDto updateProduct(MultipartFile file, String productJson) throws IOException {
+        ProductUpdateRequest req = objectMapper.readValue(productJson, ProductUpdateRequest.class);
+
+        Product existing = productRepository.findById(req.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found " + req.getId()));
+
+        // map fields from request to entity
+        MapperUtil.map(req, existing);
+
+        // check category change
+        if (req.getCategoryId() != null) {
+            Category cat = categoryRepository.findById(req.getCategoryId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Category not found " + req.getCategoryId()));
+            existing.setCategory(cat);
         }
-        
-        product.setEliminado(true);
-        productRepository.save(product);
+
+        // if new file -> upload and set new key
+        if (file != null && !file.isEmpty()) {
+            String key = s3Service.uploadFile(file, "products");
+            existing.setImage(key);
+        }
+
+        Product saved = productRepository.save(existing);
+        ProductResponseDto dto = MapperUtil.map(saved, ProductResponseDto.class);
+        if (saved.getImage() != null) dto.setImage(s3Service.getFileUrl(saved.getImage()));
+        if (saved.getCategory() != null) dto.setCategoryId(saved.getCategory().getId());
+        if (saved.getUser() != null) dto.setUserId(saved.getUser().getId());
+        return dto;
+    }
+
+    public void delete(Long id) {
+        Product p = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found " + id));
+        productRepository.delete(p);
     }
 }
