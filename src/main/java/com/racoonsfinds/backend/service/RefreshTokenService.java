@@ -12,29 +12,29 @@ import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.RefreshTokenRepository;
 
 import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
-    private final Duration refreshTokenDuration;
 
-    public RefreshTokenService(RefreshTokenRepository refreshTokenRepository,
-                               @Value("${security.jwt.refresh-expiration}") long refreshTokenDurationMinutes) {
-        this.refreshTokenRepository = refreshTokenRepository;
-        this.refreshTokenDuration = Duration.ofMinutes(refreshTokenDurationMinutes); 
+    @Value("${security.jwt.refresh-expiration}")
+    private long refreshTokenDurationMinutes;
+
+    private Duration getDuration() {
+        return Duration.ofMinutes(refreshTokenDurationMinutes);
     }
 
-        @Transactional
-        public RefreshToken createRefreshToken(User user) {
-            refreshTokenRepository.deleteByUser(user);
-
-            String token = UUID.randomUUID().toString();
-            LocalDateTime expiry = LocalDateTime.now().plus(refreshTokenDuration);
-            RefreshToken refreshToken = new RefreshToken(token, user, expiry);
-            return refreshTokenRepository.save(refreshToken);
-        }
-
+    @Transactional
+    public RefreshToken createRefreshToken(User user) {
+        refreshTokenRepository.deleteByUser(user);
+        String token = UUID.randomUUID().toString();
+        LocalDateTime expiry = LocalDateTime.now().plus(getDuration());
+        RefreshToken refreshToken = new RefreshToken(token, user, expiry);
+        return refreshTokenRepository.save(refreshToken);
+    }
 
     public boolean isValid(RefreshToken token) {
         return token != null && token.getExpiryAt().isAfter(LocalDateTime.now());

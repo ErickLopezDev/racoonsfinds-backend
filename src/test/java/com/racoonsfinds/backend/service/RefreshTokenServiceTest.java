@@ -20,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.racoonsfinds.backend.model.RefreshToken;
 import com.racoonsfinds.backend.model.User;
@@ -37,7 +38,10 @@ class RefreshTokenServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        refreshTokenService = new RefreshTokenService(refreshTokenRepository, 30);
+        refreshTokenService = new RefreshTokenService(refreshTokenRepository);
+        
+        // Simulamos el valor que normalmente inyecta Spring:
+        ReflectionTestUtils.setField(refreshTokenService, "refreshTokenDurationMinutes", 30L);
     }
 
     @Test
