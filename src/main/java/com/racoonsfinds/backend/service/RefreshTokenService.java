@@ -12,8 +12,10 @@ import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.RefreshTokenRepository;
 
 import jakarta.transaction.Transactional;
+import lombok.AllArgsConstructor;
 
 @Service
+@AllArgsConstructor
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
