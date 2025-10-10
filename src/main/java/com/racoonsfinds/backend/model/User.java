@@ -51,24 +51,20 @@ public class User {
   private LocalDateTime lastLogin;
 
   @Temporal(TemporalType.TIMESTAMP)
-  private LocalDateTime createdAt = LocalDateTime.now();
-<<<<<<< Updated upstream
+  private LocalDateTime createdAt = LocalDateTime.now();  
 
-=======
-  
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<Cart> cart;
   
   @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
   private List<Wishlist> wishlist;
 
-    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<Notification> notifications;
+  // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  // private List<Notification> notifications;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Product> products;
+  @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  private List<Product> products;
 
-    // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<Purchase> purchases;
->>>>>>> Stashed changes
+  // @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  // private List<Purchase> purchases;
 }

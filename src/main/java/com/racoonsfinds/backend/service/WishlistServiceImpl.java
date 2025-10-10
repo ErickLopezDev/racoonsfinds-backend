@@ -1,6 +1,7 @@
 package com.racoonsfinds.backend.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +16,6 @@ import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.repository.WishlistRepository;
 import com.racoonsfinds.backend.service.int_.WishlistService;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class WishlistServiceImpl implements WishlistService {
 
+    private final S3Service s3Service;
     private final WishlistRepository wishlistRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
@@ -46,7 +47,7 @@ public class WishlistServiceImpl implements WishlistService {
         wishlist.setProduct(product);
         wishlistRepository.save(wishlist);
 
-        return MapperUtil.map(wishlist, WishlistResponseDto.class);
+        return buildResponseDto(wishlist);
     }
 
     @Override
@@ -59,6 +60,22 @@ public class WishlistServiceImpl implements WishlistService {
     public List<WishlistResponseDto> getUserWishlist() {
         Long userId = AuthUtil.getAuthenticatedUserId();
         List<Wishlist> wishlist = wishlistRepository.findByUserId(userId);
-        return MapperUtil.mapList(wishlist, WishlistResponseDto.class);
+        return wishlist.stream()
+                .map(this::buildResponseDto)
+                .collect(Collectors.toList());
+    }
+
+    private WishlistResponseDto buildResponseDto(Wishlist wishlist) {
+        Product product = wishlist.getProduct();
+        User user = wishlist.getUser();
+
+        WishlistResponseDto dto = new WishlistResponseDto();
+        dto.setId(wishlist.getId());
+        dto.setUserId(user != null ? user.getId() : null);
+        dto.setProductId(product != null ? product.getId() : null);
+        dto.setProductName(product != null ? product.getName() : null);
+        dto.setProductImage(product != null ? s3Service.getFileUrl(product.getImage()) : null);
+        dto.setProductPrice(product != null ? product.getPrice() : null);
+        return dto;
     }
 }

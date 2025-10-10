@@ -1,6 +1,7 @@
 package com.racoonsfinds.backend.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +16,6 @@ import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.CartService;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 @Transactional
 public class CartServiceImpl implements CartService {
 
+    private final S3Service s3Service;
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
@@ -49,7 +50,7 @@ public class CartServiceImpl implements CartService {
         cart.setAmount(dto.getAmount());
         cartRepository.save(cart);
 
-        return MapperUtil.map(cart, CartResponseDto.class);
+        return buildResponseDto(cart);
     }
 
     @Override
@@ -61,8 +62,10 @@ public class CartServiceImpl implements CartService {
     @Override
     public List<CartResponseDto> getUserCart() {
         Long userId = AuthUtil.getAuthenticatedUserId();
-        List<Cart> cartList = cartRepository.findByUserId(userId);
-        return MapperUtil.mapList(cartList, CartResponseDto.class);
+        List<Cart> carts = cartRepository.findByUserId(userId);
+         return carts.stream()
+                .map(this::buildResponseDto)
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -70,5 +73,20 @@ public class CartServiceImpl implements CartService {
         Long userId = AuthUtil.getAuthenticatedUserId();
         List<Cart> items = cartRepository.findByUserId(userId);
         cartRepository.deleteAll(items);
+    }
+
+    private CartResponseDto buildResponseDto(Cart cart) {
+        Product product = cart.getProduct();
+        User user = cart.getUser();
+
+        CartResponseDto dto = new CartResponseDto();
+        dto.setId(cart.getId());
+        dto.setUserId(user != null ? user.getId() : null);
+        dto.setProductId(product != null ? product.getId() : null);
+        dto.setProductName(product != null ? product.getName() : null);
+        dto.setProductImage(product != null ? s3Service.getFileUrl(product.getImage()) : null);
+        dto.setProductPrice(product != null ? product.getPrice() : null);
+        dto.setAmount(cart.getAmount());
+        return dto;
     }
 }
