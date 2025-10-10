@@ -1,7 +1,6 @@
 package com.racoonsfinds.backend.controller;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -10,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -22,6 +22,7 @@ import com.racoonsfinds.backend.service.ProductService;
 public class ProductController {
 
     private final ProductService productService;
+
     public ProductController(ProductService productService) {
         this.productService = productService;
     }
@@ -56,9 +57,17 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponseDto>> all() {
-        return ResponseEntity.ok(productService.findAll());
+    public ResponseEntity<?> all(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(required = false) Long categoryId,
+        @RequestParam(required = false) String search,
+        @RequestParam(required = false, defaultValue = "createdDate") String sortBy,
+        @RequestParam(required = false, defaultValue = "desc") String sortDir
+    ) {
+        return ResponseEntity.ok(productService.findAllPaged(page, size, categoryId, search, sortBy, sortDir));
     }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {

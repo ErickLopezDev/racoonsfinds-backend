@@ -3,13 +3,16 @@ package com.racoonsfinds.backend.service;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.racoonsfinds.backend.dto.products.PagedResponse;
 import com.racoonsfinds.backend.dto.products.ProductRequestDto;
 import com.racoonsfinds.backend.dto.products.ProductResponseDto;
 import com.racoonsfinds.backend.dto.products.ProductUpdateRequest;
@@ -22,6 +25,7 @@ import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 import com.racoonsfinds.backend.shared.utils.MapperUtil;
+import org.springframework.data.domain.Pageable;
 
 import lombok.AllArgsConstructor;
 
@@ -34,8 +38,6 @@ public class ProductService {
     private final UserRepository userRepository;
     private final S3Service s3Service;
     private final ObjectMapper objectMapper;
-
-    
 
     @Transactional
     public ProductResponseDto createProduct(MultipartFile file, String productJson) throws IOException {
@@ -72,12 +74,51 @@ public class ProductService {
         return mapToDto(saved);
     }
 
-    public List<ProductResponseDto> findAll() {
-        return productRepository.findAll()
-                .stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+
+    public PagedResponse<ProductResponseDto> findAllPaged(
+            int page,
+            int size,
+            Long categoryId,
+            String search,
+            String sortBy,
+            String sortDir) {
+
+        // Límite de tamaño máximo por seguridad
+        if (size > 50) size = 50;
+
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Product> products;
+
+        if (categoryId != null && search != null && !search.isEmpty()) {
+            products = productRepository.findByCategoryIdAndNameContainingIgnoreCase(categoryId, search, pageable);
+        } else if (categoryId != null) {
+            products = productRepository.findByCategoryId(categoryId, pageable);
+        } else if (search != null && !search.isEmpty()) {
+            products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search, pageable);
+        } else {
+            products = productRepository.findAll(pageable);
+        }
+
+        // Mapear resultados a DTO
+        List<ProductResponseDto> dtoList = products
+                .map(p -> MapperUtil.map(p, ProductResponseDto.class))
+                .getContent();
+
+        // Retornar estructura con metadata
+        return new PagedResponse<>(
+                dtoList,
+                products.getNumber(),
+                products.getTotalPages(),
+                products.getTotalElements(),
+                products.getSize()
+        );
     }
+
 
     public ProductResponseDto getById(Long id) {
         Product product = productRepository.findById(id)
