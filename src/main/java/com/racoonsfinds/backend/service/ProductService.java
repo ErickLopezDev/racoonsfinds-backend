@@ -106,7 +106,7 @@ public class ProductService {
 
         // Mapear resultados a DTO
         List<ProductResponseDto> dtoList = products
-                .map(p -> MapperUtil.map(p, ProductResponseDto.class))
+                .map(p -> mapToDto(p))
                 .getContent();
 
         // Retornar estructura con metadata
@@ -138,14 +138,14 @@ public class ProductService {
         Product existing = productRepository.findById(req.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + req.getId()));
 
-        // ✅ Actualizamos manualmente los campos simples (sin tocar relaciones ni ID)
+        // Actualizamos manualmente los campos simples (sin tocar relaciones ni ID)
         if (req.getName() != null) existing.setName(req.getName());
         if (req.getStock() != null) existing.setStock(req.getStock());
         if (req.getPrice() != null) existing.setPrice(req.getPrice());
         if (req.getDescription() != null) existing.setDescription(req.getDescription());
         if (req.getEliminado() != null) existing.setEliminado(req.getEliminado());
 
-        // ✅ Actualizamos categoría solo si viene un ID válido
+        // Actualizamos categoría solo si viene un ID válido
         if (req.getCategoryId() != null) {
             Category cat = categoryRepository.findById(req.getCategoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
