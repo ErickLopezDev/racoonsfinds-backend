@@ -164,3 +164,4 @@ class AuthControllerTest {
         verify(authService).resetPassword(anyLong(), anyString(), anyString());
     }
 }
+//.
