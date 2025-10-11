@@ -14,18 +14,20 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.racoonsfinds.backend.dto.ApiResponse;
+import com.racoonsfinds.backend.dto.products.PagedResponse;
 import com.racoonsfinds.backend.dto.products.ProductResponseDto;
 import com.racoonsfinds.backend.service.ProductService;
+import com.racoonsfinds.backend.shared.utils.ResponseUtil;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/products")
+@RequiredArgsConstructor
 public class ProductController {
 
     private final ProductService productService;
-
-    public ProductController(ProductService productService) {
-        this.productService = productService;
-    }
 
     /**
      * Crear producto:
@@ -34,30 +36,30 @@ public class ProductController {
      *    - product: JSON string (ProductCreateRequest)
      */
     @PostMapping(consumes = {"multipart/form-data"})
-    public ResponseEntity<ProductResponseDto> create(
+    public ResponseEntity<ApiResponse<ProductResponseDto>> create(
             @RequestPart(value = "file", required = false) MultipartFile file,
             @RequestPart("product") String productJson) throws IOException {
 
         ProductResponseDto dto = productService.createProduct(file, productJson);
-        return ResponseEntity.ok(dto);
+        return ResponseUtil.created("Producto creado correctamente", dto);
     }
 
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
-    public ResponseEntity<ProductResponseDto> update(
+    public ResponseEntity<ApiResponse<ProductResponseDto>> update(
             @PathVariable Long id,
             @RequestPart(value = "file", required = false) MultipartFile file,
             @RequestPart("product") String productJson) throws IOException {
-        return ResponseEntity.ok(productService.updateProduct(id, file, productJson));
+        return ResponseUtil.ok("Producto actualizado correctamente", productService.updateProduct(id, file, productJson));
     }
 
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductResponseDto> get(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getById(id));
+    public ResponseEntity<ApiResponse<ProductResponseDto>> get(@PathVariable Long id) {
+        return ResponseUtil.ok("Producto obtenido correctamente", productService.getById(id));
     }
 
     @GetMapping
-    public ResponseEntity<?> all(
+    public ResponseEntity<ApiResponse<PagedResponse<ProductResponseDto>>> all(
         @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "10") int size,
         @RequestParam(required = false) Long categoryId,
@@ -65,13 +67,14 @@ public class ProductController {
         @RequestParam(required = false, defaultValue = "createdDate") String sortBy,
         @RequestParam(required = false, defaultValue = "desc") String sortDir
     ) {
-        return ResponseEntity.ok(productService.findAllPaged(page, size, categoryId, search, sortBy, sortDir));
+        return ResponseUtil.ok("Productos obtenidos correctamente",
+            productService.findAllPaged(page, size, categoryId, search, sortBy, sortDir));
     }
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         productService.delete(id);
-        return ResponseEntity.noContent().build();
+        return ResponseUtil.ok("Producto eliminado correctamente");
     }
 }

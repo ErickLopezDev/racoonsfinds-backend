@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.cart.CartRequestDto;
 import com.racoonsfinds.backend.dto.cart.CartResponseDto;
 import com.racoonsfinds.backend.service.int_.CartService;
+import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,24 +27,24 @@ public class CartController {
     private final CartService cartService;
 
     @PostMapping
-    public ResponseEntity<CartResponseDto> addToCart(@RequestBody CartRequestDto dto) {
-        return ResponseEntity.ok(cartService.addToCart(dto));
+    public ResponseEntity<ApiResponse<CartResponseDto>> addToCart(@RequestBody CartRequestDto dto) {
+        return ResponseUtil.ok("Producto añadido al carrito", cartService.addToCart(dto));
     }
 
     @GetMapping
-    public ResponseEntity<List<CartResponseDto>> getUserCart() {
-        return ResponseEntity.ok(cartService.getUserCart());
+    public ResponseEntity<ApiResponse<List<CartResponseDto>>> getUserCart() {
+        return ResponseUtil.ok("Carrito obtenido correctamente", cartService.getUserCart());
     }
 
     @DeleteMapping("/{productId}")
-    public ResponseEntity<Void> removeFromCart(@PathVariable Long productId) {
+    public ResponseEntity<ApiResponse<Void>> removeFromCart(@PathVariable Long productId) {
         cartService.removeFromCart(productId);
-        return ResponseEntity.noContent().build();
+        return ResponseUtil.ok("Producto eliminado del carrito correctamente");
     }
 
     @DeleteMapping("/clear")
-    public ResponseEntity<Void> clearCart() {
+    public ResponseEntity<ApiResponse<Void>> clearCart() {
         cartService.clearCart();
-        return ResponseEntity.noContent().build();
+        return ResponseUtil.ok("Carrito limpiado correctamente");
     }
 }
