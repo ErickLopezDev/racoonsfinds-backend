@@ -11,11 +11,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.security.JwtAuthenticationFilter;
 import com.racoonsfinds.backend.security.JwtUtil;
 import com.racoonsfinds.backend.service.RefreshTokenService;
+
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 
@@ -34,15 +39,17 @@ public class SecurityConfig {
 
         return http
             .csrf(csrf -> csrf.disable())
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) 
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Rutas públicas
                 .requestMatchers(
-                    "/api/auth/**",       // login, register, refresh, etc
-                    "/api/products",      
-                    "/api/products/**",   
+                    "/api/auth/**",
+                    "/api/products",
+                    "/api/products/**",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/swagger-resources/**",
                     "/error"
                 ).permitAll()
                 .anyRequest().authenticated()
@@ -51,11 +58,24 @@ public class SecurityConfig {
             .build();
     }
 
-    
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowedOrigins(List.of("*"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return source;
+    }
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
     }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
