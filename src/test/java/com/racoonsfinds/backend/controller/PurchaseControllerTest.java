@@ -34,7 +34,7 @@ class PurchaseControllerTest {
     @Test
     void purchaseFromCart_ShouldReturnCreated() throws Exception {
         PurchaseResponseDto dto = new PurchaseResponseDto(); dto.setId(1L);
-        when(purchaseService.purchaseFromCart(any())).thenReturn(ResponseEntity.status(201).body(new ApiResponse<>("ok", dto)));
+        when(purchaseService.purchaseFromCart(any())).thenReturn(ResponseEntity.status(201).body(new ApiResponse<>("ok", true, dto)));
 
         mockMvc.perform(post("/api/purchases/from-cart").param("description", "d"))
             .andExpect(status().isCreated())
@@ -44,7 +44,7 @@ class PurchaseControllerTest {
     @Test
     void purchaseOne_ShouldReturnCreated() throws Exception {
         PurchaseResponseDto dto = new PurchaseResponseDto(); dto.setId(5L);
-        when(purchaseService.purchaseOne(eq(9L), any())).thenReturn(ResponseEntity.status(201).body(new ApiResponse<>("ok", dto)));
+        when(purchaseService.purchaseOne(eq(9L), any())).thenReturn(ResponseEntity.status(201).body(new ApiResponse<>("ok", true,dto)));
 
         mockMvc.perform(post("/api/purchases/one/{cartId}", 9).param("description", "d"))
             .andExpect(status().isCreated())

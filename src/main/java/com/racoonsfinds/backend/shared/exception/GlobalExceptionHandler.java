@@ -13,14 +13,14 @@ public class GlobalExceptionHandler {
     // Maneja tus excepciones personalizadas (ApiException)
     @ExceptionHandler(ApiException.class)
     public ResponseEntity<ApiResponse<Void>> handleApiException(ApiException ex) {
-        ApiResponse<Void> response = new ApiResponse<>(ex.getMessage(), null);
+        ApiResponse<Void> response = new ApiResponse<>(ex.getMessage(), false, null);
         return ResponseEntity.status(ex.getStatus()).body(response);
     }
 
     // Maneja cualquier otro error no controlado
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleUnexpected(Exception ex) {
-        ApiResponse<Void> response = new ApiResponse<>("Error interno: " + ex.getMessage(), null);
+        ApiResponse<Void> response = new ApiResponse<>("Error interno: " + ex.getMessage(), false,  null);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
     }
 }

@@ -7,19 +7,19 @@ import com.racoonsfinds.backend.dto.ApiResponse;
 
 public class ResponseUtil {
 
-    public static <T> ResponseEntity<ApiResponse<T>> ok(String message, T data) {
-        return ResponseEntity.ok(new ApiResponse<>(message, data));
+    public static <T> ResponseEntity<ApiResponse<T>> ok(String message,T data) {
+        return ResponseEntity.ok(new ApiResponse<>(message, true ,data));
     }
 
     public static <T> ResponseEntity<ApiResponse<T>> created(String message, T data) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(message, data));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(message,true ,data));
     }
 
     public static ResponseEntity<ApiResponse<Void>> ok(String message) {
-        return ResponseEntity.ok(new ApiResponse<>(message, null));
+        return ResponseEntity.ok(new ApiResponse<>(message, true, null));
     }
 
     public static ResponseEntity<ApiResponse<Void>> created(String message) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(message, null));
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(message, true, null));
     }
 }
