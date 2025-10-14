@@ -120,7 +120,7 @@ public class AuthService {
     // ------------------------------------------------------------
     @Transactional
     public void verifyCode(VerifyCodeDto dto) {
-        var opt = userRepository.findByEmail(dto.getUserEmail());
+        var opt = userRepository.findByEmail(dto.getEmail());
         if (opt.isEmpty()) throw new NotFoundException("Usuario no encontrado.");
 
         User user = opt.get();

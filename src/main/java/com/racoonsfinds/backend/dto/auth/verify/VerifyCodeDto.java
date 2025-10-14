@@ -6,10 +6,9 @@ import lombok.Setter;
 
 @Getter @Setter
 public class VerifyCodeDto {
-    @NotNull
-    private String userEmail;
-
-    @NotBlank
+    @Email(message = "Debe ser un correo electrónico válido")
+    private String email;
+    
     @Size(min = 6, max = 6)
     private String code;
 }
