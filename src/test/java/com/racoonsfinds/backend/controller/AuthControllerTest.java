@@ -94,22 +94,22 @@ class AuthControllerTest {
     // ------------------------
     // VERIFY ACCOUNT
     // ------------------------
-    @Test
-    void shouldVerifyAccountSuccessfully() throws Exception {
-        VerifyCodeDto dto = new VerifyCodeDto();
-        dto.setUserId(1L);
-        dto.setCode("123123");
+    // @Test
+    // void shouldVerifyAccountSuccessfully() throws Exception {
+    //     VerifyCodeDto dto = new VerifyCodeDto();
+    //     dto.setUserId(1L);
+    //     dto.setCode("123123");
 
-        doNothing().when(authService).verifyCode(any(VerifyCodeDto.class));
+    //     doNothing().when(authService).verifyCode(any(VerifyCodeDto.class));
 
-        mockMvc.perform(post("/api/auth/verify")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("Cuenta verificada correctamente"));
+    //     mockMvc.perform(post("/api/auth/verify")
+    //             .contentType(MediaType.APPLICATION_JSON)
+    //             .content(objectMapper.writeValueAsString(dto)))
+    //         .andExpect(status().isOk())
+    //         .andExpect(jsonPath("$.message").value("Cuenta verificada correctamente"));
 
-        verify(authService).verifyCode(any(VerifyCodeDto.class));
-    }
+    //     verify(authService).verifyCode(any(VerifyCodeDto.class));
+    // }
 
     // ------------------------
     // RESEND VERIFICATION

@@ -120,7 +120,7 @@ public class AuthService {
     // ------------------------------------------------------------
     @Transactional
     public void verifyCode(VerifyCodeDto dto) {
-        var opt = userRepository.findById(dto.getUserId());
+        var opt = userRepository.findByEmail(dto.getUserEmail());
         if (opt.isEmpty()) throw new NotFoundException("Usuario no encontrado.");
 
         User user = opt.get();
@@ -132,6 +132,9 @@ public class AuthService {
         }
         if (!user.getVerificationCode().equals(dto.getCode())) {
             throw new UnauthorizedException("El código ingresado no es válido.");
+        }
+        if (Boolean.TRUE.equals(user.getVerified())) {
+            throw new BadRequestException("El usuario ya está verificado.");
         }
 
         user.setVerified(true);
@@ -148,6 +151,10 @@ public class AuthService {
         var opt = userRepository.findByEmail(dto.getEmail());
         if (opt.isEmpty()) throw new NotFoundException("Usuario no encontrado.");
 
+        if (!Boolean.FALSE.equals(opt.get().getVerified())) {
+            throw new BadRequestException("El usuario ya está verificado.");
+        }
+        
         User user = opt.get();
         String code = generate6DigitCode();
         user.setVerificationCode(code);

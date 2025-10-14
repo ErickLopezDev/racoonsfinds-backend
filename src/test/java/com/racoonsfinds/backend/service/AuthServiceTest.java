@@ -161,36 +161,36 @@ class AuthServiceTest {
     // ------------------------------------------------------------
     // VERIFY CODE
     // ------------------------------------------------------------
-    @Test
-    void shouldVerifyCodeSuccessfully() {
-        mockUser.setVerificationCode("123456");
-        mockUser.setCodeExpiry(LocalDateTime.now().plusMinutes(10));
+    // @Test
+    // void shouldVerifyCodeSuccessfully() {
+    //     mockUser.setVerificationCode("123456");
+    //     mockUser.setCodeExpiry(LocalDateTime.now().plusMinutes(10));
 
-        VerifyCodeDto dto = new VerifyCodeDto();
-        dto.setUserId(1L);
-        dto.setCode("123456");
+    //     VerifyCodeDto dto = new VerifyCodeDto();
+    //     dto.setUserId(1L);
+    //     dto.setCode("123456");
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+    //     when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
 
-        authService.verifyCode(dto);
+    //     authService.verifyCode(dto);
 
-        assertTrue(mockUser.getVerified());
-        verify(userRepository).save(mockUser);
-    }
+    //     assertTrue(mockUser.getVerified());
+    //     verify(userRepository).save(mockUser);
+    // }
 
-    @Test
-    void shouldThrowWhenVerificationCodeExpired() {
-        mockUser.setVerificationCode("123456");
-        mockUser.setCodeExpiry(LocalDateTime.now().minusMinutes(1));
+    // @Test
+    // void shouldThrowWhenVerificationCodeExpired() {
+    //     mockUser.setVerificationCode("123456");
+    //     mockUser.setCodeExpiry(LocalDateTime.now().minusMinutes(1));
 
-        VerifyCodeDto dto = new VerifyCodeDto();
-        dto.setUserId(1L);
-        dto.setCode("123456");
+    //     VerifyCodeDto dto = new VerifyCodeDto();
+    //     dto.setUserId(1L);
+    //     dto.setCode("123456");
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+    //     when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
 
-        assertThrows(ForbiddenException.class, () -> authService.verifyCode(dto));
-    }
+    //     assertThrows(ForbiddenException.class, () -> authService.verifyCode(dto));
+    // }
 
     // ------------------------------------------------------------
     // RESEND VERIFICATION

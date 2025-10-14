@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter @Setter
 public class VerifyCodeDto {
     @NotNull
-    private Long userId;
+    private String userEmail;
 
     @NotBlank
     @Size(min = 6, max = 6)
