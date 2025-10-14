@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.racoonsfinds.backend.dto.auth.AuthResponseDto;
 import com.racoonsfinds.backend.dto.auth.login.LoginRequestDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
+import com.racoonsfinds.backend.dto.auth.resend.RequestResendDto;
 import com.racoonsfinds.backend.dto.auth.verify.VerifyCodeDto;
 import com.racoonsfinds.backend.model.RefreshToken;
 import com.racoonsfinds.backend.model.User;
@@ -143,8 +144,8 @@ public class AuthService {
     // REENVIAR CÓDIGO DE VERIFICACIÓN
     // ------------------------------------------------------------
     @Transactional
-    public void resendVerification(Long userId) {
-        var opt = userRepository.findById(userId);
+    public void resendVerification(RequestResendDto dto) {
+        var opt = userRepository.findByEmail(dto.getEmail());
         if (opt.isEmpty()) throw new NotFoundException("Usuario no encontrado.");
 
         User user = opt.get();

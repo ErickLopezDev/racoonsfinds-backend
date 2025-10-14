@@ -1,7 +1,6 @@
 package com.racoonsfinds.backend.controller;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,6 +12,7 @@ import com.racoonsfinds.backend.dto.auth.login.LoginRequestDto;
 import com.racoonsfinds.backend.dto.auth.password.ForgotPasswordDto;
 import com.racoonsfinds.backend.dto.auth.password.ResetPasswordDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
+import com.racoonsfinds.backend.dto.auth.resend.RequestResendDto;
 import com.racoonsfinds.backend.dto.auth.verify.VerifyCodeDto;
 import com.racoonsfinds.backend.service.AuthService;
 import com.racoonsfinds.backend.shared.utils.ResponseUtil;
@@ -45,9 +45,9 @@ public class AuthController {
         return ResponseUtil.ok("Cuenta verificada correctamente");
     }
 
-    @PostMapping("/resend/{userId}")
-    public ResponseEntity<ApiResponse<Void>> resend(@PathVariable Long userId) {
-        authService.resendVerification(userId);
+    @PostMapping("/resend")
+    public ResponseEntity<ApiResponse<Void>> resend(@RequestBody RequestResendDto dto) {
+        authService.resendVerification(dto);
         return ResponseUtil.ok("Código de verificación reenviado correctamente");
     }
     @PostMapping("/forgot-password")

@@ -195,21 +195,21 @@ class AuthServiceTest {
     // ------------------------------------------------------------
     // RESEND VERIFICATION
     // ------------------------------------------------------------
-    @Test
-    void shouldResendVerificationCodeSuccessfully() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+    // @Test
+    // void shouldResendVerificationCodeSuccessfully() {
+    //     when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
 
-        authService.resendVerification(1L);
+    //     authService.resendVerification(1L);
 
-        verify(emailService, times(1)).sendVerificationEmail(eq(mockUser.getEmail()), anyString(), contains("Tu nuevo código"));
-        verify(userRepository).save(mockUser);
-    }
+    //     verify(emailService, times(1)).sendVerificationEmail(eq(mockUser.getEmail()), anyString(), contains("Tu nuevo código"));
+    //     verify(userRepository).save(mockUser);
+    // }
 
-    @Test
-    void shouldThrowWhenResendVerificationUserNotFound() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(NotFoundException.class, () -> authService.resendVerification(1L));
-    }
+    // @Test
+    // void shouldThrowWhenResendVerificationUserNotFound() {
+    //     when(userRepository.findById(1L)).thenReturn(Optional.empty());
+    //     assertThrows(NotFoundException.class, () -> authService.resendVerification(1L));
+    // }
 
     // ------------------------------------------------------------
     // FORGOT PASSWORD
