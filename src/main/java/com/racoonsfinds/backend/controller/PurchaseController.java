@@ -1,6 +1,9 @@
 package com.racoonsfinds.backend.controller;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,15 +12,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
-import com.racoonsfinds.backend.service.int_.PurchaseService;
+import com.racoonsfinds.backend.service.PurchaseServiceImpl;
 
 @RestController
 @RequestMapping("/api/purchases")
 public class PurchaseController {
 
-    private final PurchaseService purchaseService;
+    private final PurchaseServiceImpl purchaseService;
 
-    public PurchaseController(PurchaseService purchaseService) {
+    public PurchaseController(PurchaseServiceImpl purchaseService) {
         this.purchaseService = purchaseService;
     }
 
@@ -35,4 +38,15 @@ public class PurchaseController {
     ) {
         return purchaseService.purchaseOne(cartId, description);
     }
+
+    @GetMapping("/my-purchases")
+    public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMyPurchases() {
+        return purchaseService.getMyPurchases();
+    }
+
+    @GetMapping("/my-sales")
+    public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMySales() {
+        return purchaseService.getMySales();
+    }
+    
 }

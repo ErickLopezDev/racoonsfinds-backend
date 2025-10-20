@@ -121,6 +121,32 @@ public class PurchaseServiceImpl implements PurchaseService {
         return ResponseUtil.created("Compra individual realizada con éxito", responseDto);
     }
 
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMyPurchases() {
+        Long userId = AuthUtil.getAuthenticatedUserId();
+        if (userId == null) throw new NotFoundException("Usuario no autenticado");
+
+        List<Purchase> purchases = purchaseRepository.findByUserId(userId);
+        List<PurchaseResponseDto> response = purchases.stream()
+                .map(this::mapToDto)
+                .toList();
+
+        return ResponseUtil.ok("Listado de compras", response);
+    }
+
+    @Transactional(readOnly = true)
+    public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMySales() {
+        Long sellerId = AuthUtil.getAuthenticatedUserId();
+        if (sellerId == null) throw new NotFoundException("Usuario no autenticado");
+
+        List<Purchase> purchases = purchaseRepository.findSalesBySellerId(sellerId);
+        List<PurchaseResponseDto> response = purchases.stream()
+                .map(this::mapToDto)
+                .toList();
+
+        return ResponseUtil.ok("Listado de ventas", response);
+    }
+
     // === PRIVATE MAPPER ===
     private PurchaseResponseDto mapToDto(Purchase purchase) {
         PurchaseResponseDto dto = new PurchaseResponseDto();
@@ -157,6 +183,4 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         return dto;
     }
-
-
 }
