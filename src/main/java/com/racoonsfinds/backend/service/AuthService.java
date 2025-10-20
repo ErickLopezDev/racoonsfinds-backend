@@ -18,6 +18,7 @@ import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.security.JwtUtil;
 import com.racoonsfinds.backend.service.int_.EmailService;
+import com.racoonsfinds.backend.shared.const_.UserStatus;
 import com.racoonsfinds.backend.shared.exception.ApiException;
 import com.racoonsfinds.backend.shared.exception.BadRequestException;
 import com.racoonsfinds.backend.shared.exception.ConflictException;
@@ -43,49 +44,53 @@ public class AuthService {
     private final int lockMinutes = 15;
     private final int verificationCodeExpiryMinutes = 15;
 
-    // ------------------------------------------------------------
-    // LOGIN
-    // ------------------------------------------------------------
     @Transactional(noRollbackFor = ApiException.class)
     public AuthResponseDto login(LoginRequestDto dto) {
+        // 1. Usuario no encontrado
         var optUser = userRepository.findByEmail(dto.getEmail());
-        if (optUser.isEmpty()) optUser = userRepository.findByUsername(dto.getEmail());
-        if (optUser.isEmpty()) throw new BadRequestException("Credenciales inválidas");
+        if (optUser.isEmpty()) {
+            optUser = userRepository.findByUsername(dto.getEmail());
+        }
+        if (optUser.isEmpty()) {
+            return new AuthResponseDto(null, UserStatus.NOT_FOUND, null, null);
+        }
 
         User user = optUser.get();
 
-        // bloqueo temporal
+        // 2. Bloqueo temporal
         if (user.getFailedAttempts() >= maxFailedAttempts) {
-            if (user.getLastLogin() != null && user.getLastLogin().plusMinutes(lockMinutes).isAfter(LocalDateTime.now())) {
-                throw new ForbiddenException("Cuenta bloqueada temporalmente. Intenta nuevamente en " + lockMinutes + " minutos.");
+            if (user.getLastLogin() != null && 
+                user.getLastLogin().plusMinutes(lockMinutes).isAfter(LocalDateTime.now())) {
+                return new AuthResponseDto(user.getId(), UserStatus.BLOCKED_TEMP, null, null);
             } else {
                 resetFailedAttempts(user);
             }
         }
 
-        // contraseña incorrecta
+        // 3. Contraseña incorrecta
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
             incrementFailedAttempts(user);
             int remaining = Math.max(0, maxFailedAttempts - (user.getFailedAttempts() + 1));
-            String msg = (remaining > 0)
-                    ? "Contraseña incorrecta. Te quedan " + remaining + " intento(s) antes del bloqueo."
-                    : "Cuenta bloqueada temporalmente por varios intentos fallidos.";
-            throw new UnauthorizedException(msg);
+            
+            if (remaining == 0) {
+                return new AuthResponseDto(user.getId(), UserStatus.BLOCKED_TEMP, null, null);
+            }
+            // Para intentos restantes, también retornamos NOT_AUTH
+            return new AuthResponseDto(user.getId(), UserStatus.NOT_AUTH, null, null);
         }
 
-        // usuario no verificado
+        // 4. Usuario no verificado
         if (!Boolean.TRUE.equals(user.getVerified())) {
-            throw new ForbiddenException("Usuario no verificado. Revisa tu correo electrónico.");
+            return new AuthResponseDto(user.getId(), UserStatus.NOT_VERIFIED, null, null);
         }
 
-        // login exitoso
+        // 5. Login exitoso
         resetFailedAttempts(user);
         String access = jwtUtil.generateToken(String.valueOf(user.getId()));
         RefreshToken refresh = refreshTokenService.createRefreshToken(user);
 
-        return new AuthResponseDto(user.getId(), access, refresh.getToken());
+        return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, access, refresh.getToken());
     }
-
     // ------------------------------------------------------------
     // REGISTRO
     // ------------------------------------------------------------

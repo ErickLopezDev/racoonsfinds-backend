@@ -1,5 +1,6 @@
 package com.racoonsfinds.backend.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +16,7 @@ import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
 import com.racoonsfinds.backend.dto.auth.resend.RequestResendDto;
 import com.racoonsfinds.backend.dto.auth.verify.VerifyCodeDto;
 import com.racoonsfinds.backend.service.AuthService;
+import com.racoonsfinds.backend.shared.const_.UserStatus;
 import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 
 import jakarta.validation.Valid;
@@ -35,8 +37,13 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthResponseDto>> login(@Valid @RequestBody LoginRequestDto dto) {
-        AuthResponseDto resp = authService.login(dto);
-        return ResponseUtil.ok("Login exitoso", resp);
+        AuthResponseDto response = authService.login(dto);
+        
+        if (response.getStatus() == UserStatus.AUTH_SUCCESS) {
+        return ResponseUtil.ok("Login exitoso", response);
+    } else {
+        return ResponseUtil.unauthorized("Credenciales inválidas", response);
+    }
     }
 
     @PostMapping("/verify")

@@ -150,7 +150,7 @@ public class ProductService {
             existing.setCategory(cat);
         }
 
-        // ✅ Si se envía un nuevo archivo, se reemplaza la imagen
+        // Si se envía un nuevo archivo, se reemplaza la imagen
         if (file != null && !file.isEmpty()) {
             String key = s3Service.uploadFile(file, "products");
             existing.setImage(key);

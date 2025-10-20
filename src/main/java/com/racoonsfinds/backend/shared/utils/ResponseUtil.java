@@ -22,4 +22,8 @@ public class ResponseUtil {
     public static ResponseEntity<ApiResponse<Void>> created(String message) {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(message, true, null));
     }
+    public static <T> ResponseEntity<ApiResponse<T>> unauthorized(String message, T data) {
+        ApiResponse<T> apiResponse = new ApiResponse<>(message, false, data);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(apiResponse);
+    }
 }
