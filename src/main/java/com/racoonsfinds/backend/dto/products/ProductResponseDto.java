@@ -25,13 +25,4 @@ public class ProductResponseDto {
     private String categoryName;
     private Long userId;
     private String userName;
-    // TODO INICIALIZAR EL CATEGORY Y USER
-    private static final String S3_BASE_URL = "https://racoonsfinds.s3.us-east-1.amazonaws.com/";
-
-    public String getImageUrl() {
-        if (image == null || image.isEmpty()) {
-            return null;
-        }
-        return S3_BASE_URL + image;
-    }
 }
