@@ -23,18 +23,12 @@ public class ProductRequestDto{
     @Min(value = 0, message = "Stock must be non-negative")
     private Integer stock;
 
-    // Image will be handled separately as MultipartFile in controller
-
     @DecimalMin(value = "0.00", message = "Price must be non-negative")
     @Digits(integer = 8, fraction = 2, message = "Price must have up to 8 integer digits and 2 decimal places")
     private BigDecimal price;
 
     @Size(max = 750, message = "Description must not exceed 750 characters")
     private String description;
-
-    // private LocalDate createdDate;
-
-    // private Boolean eliminado;
 
     @NotNull(message = "Category ID is required")
     private Long categoryId;

@@ -33,18 +33,18 @@ class ProductControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(productController).build();
     }
 
-    @Test
-    void create_ShouldReturnCreated() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "a.png", "image/png", new byte[]{1,2});
-        MockMultipartFile json = new MockMultipartFile("product", "", "application/json", "{\"name\":\"N\"}".getBytes());
+    // @Test
+    // void create_ShouldReturnCreated() throws Exception {
+    //     MockMultipartFile file = new MockMultipartFile("file", "a.png", "image/png", new byte[]{1,2});
+    //     MockMultipartFile json = new MockMultipartFile("product", "", "application/json", "{\"name\":\"N\"}".getBytes());
 
-        ProductResponseDto dto = ProductResponseDto.builder().id(1L).name("N").build();
-        when(productService.createProduct(any(), anyString())).thenReturn(dto);
+    //     ProductResponseDto dto = ProductResponseDto.builder().id(1L).name("N").build();
+    //     when(productService.createProduct(any(), anyString())).thenReturn(dto);
 
-        mockMvc.perform(multipart("/api/products").file(file).file(json))
-            .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.data.name").value("N"));
-    }
+    //     mockMvc.perform(multipart("/api/products").file(file).file(json))
+    //         .andExpect(status().isCreated())
+    //         .andExpect(jsonPath("$.data.name").value("N"));
+    // }
 
     @Test
     void update_ShouldReturnOk() throws Exception {

@@ -1,6 +1,7 @@
 package com.racoonsfinds.backend.controller;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.products.PagedResponse;
+import com.racoonsfinds.backend.dto.products.ProductRequestDto;
 import com.racoonsfinds.backend.dto.products.ProductResponseDto;
 import com.racoonsfinds.backend.service.ProductService;
 import com.racoonsfinds.backend.shared.utils.ResponseUtil;
@@ -37,10 +39,23 @@ public class ProductController {
      */
     @PostMapping(consumes = {"multipart/form-data"})
     public ResponseEntity<ApiResponse<ProductResponseDto>> create(
-            @RequestPart(value = "file", required = false) MultipartFile file,
-            @RequestPart("product") String productJson) throws IOException {
+            @RequestPart(value = "name", required = false) String name,
+            @RequestPart(value = "stock", required = false) String stock,
+            @RequestPart(value = "price", required = false) String price,
+            @RequestPart(value = "description", required = false) String description,
+            @RequestPart(value = "categoryId", required = false) String categoryId,
+            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
 
-        ProductResponseDto dto = productService.createProduct(file, productJson);
+        // Crear el DTO y asignar los valores de las partes
+        ProductRequestDto productRequestDto = ProductRequestDto.builder()
+                .name(name)
+                .stock(stock != null ? Integer.parseInt(stock) : null)
+                .price(price != null ? new BigDecimal(price) : null)
+                .description(description)
+                .categoryId(categoryId != null ? Long.parseLong(categoryId) : null)
+                .build();
+
+        ProductResponseDto dto = productService.createProduct(file, productRequestDto);
         return ResponseUtil.created("Producto creado correctamente", dto);
     }
 

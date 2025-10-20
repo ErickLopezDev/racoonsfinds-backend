@@ -24,7 +24,7 @@ import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.MapperUtil;
+import com.racoonsfinds.backend.shared.utils.MapperUtil; 
 import org.springframework.data.domain.Pageable;
 
 import lombok.AllArgsConstructor;
@@ -40,9 +40,7 @@ public class ProductService {
     private final ObjectMapper objectMapper;
 
     @Transactional
-    public ProductResponseDto createProduct(MultipartFile file, String productJson) throws IOException {
-        ProductRequestDto req = objectMapper.readValue(productJson, ProductRequestDto.class);
-
+    public ProductResponseDto createProduct(MultipartFile file, ProductRequestDto req) throws IOException {
         Product product = MapperUtil.map(req, Product.class);
         product.setCreatedDate(LocalDate.now());
         product.setEliminado(false);
@@ -71,7 +69,7 @@ public class ProductService {
         }
 
         Product saved = productRepository.save(product);
-        return mapToDto(saved);
+        return MapperUtil.map(saved, ProductResponseDto.class);
     }
 
 
