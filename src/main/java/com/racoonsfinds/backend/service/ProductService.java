@@ -73,11 +73,12 @@ public class ProductService {
     }
 
     public PagedResponse<ProductResponseDto> findAllPagedByUserId(
-        Long userId,
         int page,
         int size,
         String sortBy,
         String sortDir) {
+        
+        Long userId = AuthUtil.getAuthenticatedUserId();
 
         if (userId == null) {
             throw new ResourceNotFoundException("ID de usuario requerido");
@@ -105,8 +106,6 @@ public class ProductService {
                 products.getSize()
         );
     }
-
-
 
     public PagedResponse<ProductResponseDto> findAllPaged(
             int page,
@@ -152,7 +151,6 @@ public class ProductService {
         );
     }
 
-
     public ProductResponseDto getById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + id));
@@ -195,7 +193,6 @@ public class ProductService {
         Product saved = productRepository.save(existing);
         return mapToDto(saved);
     }
-
 
     @Transactional
     public void delete(Long id) {

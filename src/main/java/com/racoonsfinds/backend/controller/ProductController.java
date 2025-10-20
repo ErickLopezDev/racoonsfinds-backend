@@ -86,9 +86,8 @@ public class ProductController {
             productService.findAllPaged(page, size, categoryId, search, sortBy, sortDir));
     }
 
-   @GetMapping("/user/{userId}")
+   @GetMapping("/user")
     public ResponseEntity<ApiResponse<PagedResponse<ProductResponseDto>>> getProductsByUser(
-            @PathVariable Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdDate") String sortBy,
@@ -96,7 +95,7 @@ public class ProductController {
     ) {
         return ResponseUtil.ok(
             "Productos del usuario obtenidos correctamente",
-            productService.findAllPagedByUserId(userId, page, size, sortBy, sortDir)
+            productService.findAllPagedByUserId(page, size, sortBy, sortDir)
         );
     }
 
