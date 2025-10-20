@@ -3,7 +3,6 @@ package com.racoonsfinds.backend.service;
 import com.racoonsfinds.backend.dto.auth.AuthResponseDto;
 import com.racoonsfinds.backend.dto.auth.login.LoginRequestDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
-import com.racoonsfinds.backend.dto.auth.verify.VerifyCodeDto;
 import com.racoonsfinds.backend.model.RefreshToken;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.UserRepository;

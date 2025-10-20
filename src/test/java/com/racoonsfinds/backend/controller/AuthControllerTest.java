@@ -7,7 +7,6 @@ import com.racoonsfinds.backend.dto.auth.login.LoginRequestDto;
 import com.racoonsfinds.backend.dto.auth.password.ForgotPasswordDto;
 import com.racoonsfinds.backend.dto.auth.password.ResetPasswordDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
-import com.racoonsfinds.backend.dto.auth.verify.VerifyCodeDto;
 import com.racoonsfinds.backend.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
