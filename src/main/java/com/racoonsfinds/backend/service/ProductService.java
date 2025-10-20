@@ -72,6 +72,41 @@ public class ProductService {
         return MapperUtil.map(saved, ProductResponseDto.class);
     }
 
+    public PagedResponse<ProductResponseDto> findAllPagedByUserId(
+        Long userId,
+        int page,
+        int size,
+        String sortBy,
+        String sortDir) {
+
+        if (userId == null) {
+            throw new ResourceNotFoundException("ID de usuario requerido");
+        }
+
+        if (size > 50) size = 50;
+
+        Sort sort = sortDir.equalsIgnoreCase("asc")
+                ? Sort.by(sortBy).ascending()
+                : Sort.by(sortBy).descending();
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Product> products = productRepository.findByUserId(userId, pageable);
+
+        List<ProductResponseDto> dtoList = products.getContent().stream()
+                .map(this::mapToDto)
+                .toList();
+
+        return new PagedResponse<>(
+                dtoList,
+                products.getNumber(),
+                products.getTotalPages(),
+                products.getTotalElements(),
+                products.getSize()
+        );
+    }
+
+
 
     public PagedResponse<ProductResponseDto> findAllPaged(
             int page,

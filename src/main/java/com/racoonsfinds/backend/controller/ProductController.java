@@ -86,6 +86,20 @@ public class ProductController {
             productService.findAllPaged(page, size, categoryId, search, sortBy, sortDir));
     }
 
+   @GetMapping("/user/{userId}")
+    public ResponseEntity<ApiResponse<PagedResponse<ProductResponseDto>>> getProductsByUser(
+            @PathVariable Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir
+    ) {
+        return ResponseUtil.ok(
+            "Productos del usuario obtenidos correctamente",
+            productService.findAllPagedByUserId(userId, page, size, sortBy, sortDir)
+        );
+    }
+
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
