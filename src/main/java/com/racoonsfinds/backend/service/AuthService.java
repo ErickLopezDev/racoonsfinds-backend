@@ -19,12 +19,7 @@ import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.security.JwtUtil;
 import com.racoonsfinds.backend.service.int_.EmailService;
 import com.racoonsfinds.backend.shared.const_.UserStatus;
-import com.racoonsfinds.backend.shared.exception.ApiException;
-import com.racoonsfinds.backend.shared.exception.BadRequestException;
-import com.racoonsfinds.backend.shared.exception.ConflictException;
-import com.racoonsfinds.backend.shared.exception.ForbiddenException;
-import com.racoonsfinds.backend.shared.exception.NotFoundException;
-import com.racoonsfinds.backend.shared.exception.UnauthorizedException;
+import com.racoonsfinds.backend.shared.exception.*;
 import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
 import lombok.AllArgsConstructor;
@@ -39,14 +34,18 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
 
-    // configuración de seguridad
+    // Configuración de seguridad
     private final int maxFailedAttempts = 5;
     private final int lockMinutes = 15;
     private final int verificationCodeExpiryMinutes = 15;
 
+    // ==========================================================
+    // LOGIN
+    // ==========================================================
     @Transactional(noRollbackFor = ApiException.class)
     public AuthResponseDto login(LoginRequestDto dto) {
-        // 1. Usuario no encontrado
+
+        // Usuario no encontrado
         var optUser = userRepository.findByEmail(dto.getEmail());
         if (optUser.isEmpty()) {
             optUser = userRepository.findByUsername(dto.getEmail());
@@ -57,9 +56,9 @@ public class AuthService {
 
         User user = optUser.get();
 
-        // 2. Bloqueo temporal
+        // Usuario bloqueado temporalmente
         if (user.getFailedAttempts() >= maxFailedAttempts) {
-            if (user.getLastLogin() != null && 
+            if (user.getLastLogin() != null &&
                 user.getLastLogin().plusMinutes(lockMinutes).isAfter(LocalDateTime.now())) {
                 return new AuthResponseDto(user.getId(), UserStatus.BLOCKED_TEMP, null, null);
             } else {
@@ -67,33 +66,80 @@ public class AuthService {
             }
         }
 
-        // 3. Contraseña incorrecta
+        // Contraseña incorrecta
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
             incrementFailedAttempts(user);
             int remaining = Math.max(0, maxFailedAttempts - (user.getFailedAttempts() + 1));
-            
             if (remaining == 0) {
+                // Se alcanzó el máximo de intentos → bloqueo temporal
                 return new AuthResponseDto(user.getId(), UserStatus.BLOCKED_TEMP, null, null);
             }
-            // Para intentos restantes, también retornamos NOT_AUTH
+            // Credenciales inválidas pero aún puede intentar
             return new AuthResponseDto(user.getId(), UserStatus.NOT_AUTH, null, null);
         }
 
-        // 4. Usuario no verificado
+        // Usuario no verificado (correo pendiente de validación)
         if (!Boolean.TRUE.equals(user.getVerified())) {
             return new AuthResponseDto(user.getId(), UserStatus.NOT_VERIFIED, null, null);
         }
 
-        // 5. Login exitoso
+        // Login exitoso
         resetFailedAttempts(user);
         String access = jwtUtil.generateToken(String.valueOf(user.getId()));
         RefreshToken refresh = refreshTokenService.createRefreshToken(user);
 
         return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, access, refresh.getToken());
     }
-    // ------------------------------------------------------------
-    // REGISTRO
-    // ------------------------------------------------------------
+
+    // ==========================================================
+    // VERIFICAR CÓDIGO
+    // ==========================================================
+    @Transactional
+    public AuthResponseDto verifyCode(VerifyCodeDto dto) {
+
+        var opt = userRepository.findByEmail(dto.getEmail());
+        if (opt.isEmpty()) {
+            // Usuario no existe
+            return new AuthResponseDto(null, UserStatus.NOT_FOUND, null, null);
+        }
+
+        User user = opt.get();
+
+        // No hay un código pendiente
+        if (user.getVerificationCode() == null || user.getCodeExpiry() == null) {
+            return new AuthResponseDto(user.getId(), UserStatus.CODE_NOT_REQUESTED, null, null);
+        }
+
+        // Código expirado
+        if (user.getCodeExpiry().isBefore(LocalDateTime.now())) {
+            return new AuthResponseDto(user.getId(), UserStatus.CODE_EXPIRED, null, null);
+        }
+
+        // Código inválido
+        if (!user.getVerificationCode().equals(dto.getCode())) {
+            return new AuthResponseDto(user.getId(), UserStatus.CODE_INVALID, null, null);
+        }
+
+        // Usuario ya verificado → no necesita volver a hacerlo
+        if (Boolean.TRUE.equals(user.getVerified())) {
+            return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, null, null);
+        }
+
+        // Código correcto → Verificación exitosa
+        user.setVerified(true);
+        user.setVerificationCode(null);
+        user.setCodeExpiry(null);
+        userRepository.save(user);
+
+        String access = jwtUtil.generateToken(String.valueOf(user.getId()));
+        RefreshToken refresh = refreshTokenService.createRefreshToken(user);
+
+        return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, access, refresh.getToken());
+    }
+
+    // ==========================================================
+    // REGISTRO Y REENVÍO
+    // ==========================================================
     @Transactional
     public void register(RegisterRequestDto dto) {
         if (userRepository.findByEmail(dto.getEmail()).isPresent()) {
@@ -107,78 +153,42 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setVerified(false);
 
-        // generar código de verificación
         String code = generate6DigitCode();
         user.setVerificationCode(code);
         user.setCodeExpiry(LocalDateTime.now().plusMinutes(verificationCodeExpiryMinutes));
 
         userRepository.save(user);
 
-        // enviar correo
         String subject = "Código de verificación";
-        String body = String.format("Tu código de verificación es: %s (válido por %d minutos)", code, verificationCodeExpiryMinutes);
+        String body = String.format("Tu código de verificación es: %s (válido por %d minutos)",
+                code, verificationCodeExpiryMinutes);
         emailService.sendVerificationEmail(user.getEmail(), subject, body);
     }
 
-    // ------------------------------------------------------------
-    // VERIFICAR CÓDIGO
-    // ------------------------------------------------------------
-    @Transactional
-    public AuthResponseDto verifyCode(VerifyCodeDto dto) {
-        var opt = userRepository.findByEmail(dto.getEmail());
-        if (opt.isEmpty()) throw new NotFoundException("Usuario no encontrado.");
-
-        User user = opt.get();
-        if (user.getVerificationCode() == null || user.getCodeExpiry() == null) {
-            throw new BadRequestException("No hay código pendiente para este usuario.");
-        }
-        if (user.getCodeExpiry().isBefore(LocalDateTime.now())) {
-            throw new ForbiddenException("El código de verificación ha expirado. Solicita uno nuevo.");
-        }
-        if (!user.getVerificationCode().equals(dto.getCode())) {
-            throw new UnauthorizedException("El código ingresado no es válido.");
-        }
-        if (Boolean.TRUE.equals(user.getVerified())) {
-            throw new BadRequestException("El usuario ya está verificado.");
-        }
-
-        user.setVerified(true);
-        user.setVerificationCode(null);
-        user.setCodeExpiry(null);
-        userRepository.save(user);
-
-        String access = jwtUtil.generateToken(String.valueOf(user.getId()));
-        RefreshToken refresh = refreshTokenService.createRefreshToken(user);
-
-        return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, access, refresh.getToken());
-    }
-
-    // ------------------------------------------------------------
-    // REENVIAR CÓDIGO DE VERIFICACIÓN
-    // ------------------------------------------------------------
     @Transactional
     public void resendVerification(RequestResendDto dto) {
         var opt = userRepository.findByEmail(dto.getEmail());
         if (opt.isEmpty()) throw new NotFoundException("Usuario no encontrado.");
 
-        if (!Boolean.FALSE.equals(opt.get().getVerified())) {
+        User user = opt.get();
+        if (Boolean.TRUE.equals(user.getVerified())) {
             throw new BadRequestException("El usuario ya está verificado.");
         }
-        
-        User user = opt.get();
+
         String code = generate6DigitCode();
         user.setVerificationCode(code);
         user.setCodeExpiry(LocalDateTime.now().plusMinutes(verificationCodeExpiryMinutes));
         userRepository.save(user);
 
         String subject = "Reenvío de código de verificación";
-        String body = String.format("Tu nuevo código de verificación es: %s (válido por %d minutos)", code, verificationCodeExpiryMinutes);
+        String body = String.format("Tu nuevo código de verificación es: %s (válido por %d minutos)",
+                code, verificationCodeExpiryMinutes);
         emailService.sendVerificationEmail(user.getEmail(), subject, body);
     }
 
-    // ------------------------------------------------------------
-    // MÉTODOS AUXILIARES
-    // ------------------------------------------------------------
+    // ==========================================================
+    // AUXILIARES
+    // ==========================================================
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void incrementFailedAttempts(User user) {
         user.setFailedAttempts(user.getFailedAttempts() + 1);
@@ -195,9 +205,13 @@ public class AuthService {
 
     private String generate6DigitCode() {
         Random rnd = new Random();
-        int number = rnd.nextInt(900_000) + 100_000; // asegura 6 dígitos
+        int number = rnd.nextInt(900_000) + 100_000;
         return String.valueOf(number);
     }
+
+    // ==========================================================
+    // RECUPERAR / RESETEAR CONTRASEÑA
+    // ==========================================================
     @Transactional
     public void forgotPassword(String email) {
         var optUser = userRepository.findByEmail(email);
