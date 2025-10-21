@@ -44,11 +44,6 @@ public class UserService {
       User existing = userRepository.findById(currentUserId)
               .orElseThrow(() -> new ResourceNotFoundException("User not found with ID " + currentUserId));
 
-      System.out.println("=== ANTES ===");
-      System.out.println("Username: " + existing.getUsername());
-      System.out.println("ImageUrl: " + existing.getImageUrl());
-      System.out.println("BirthDate: " + existing.getBirthDate());
-
       // Actualizar solo los campos enviados
       if (username != null && !username.isBlank()) {
           existing.setUsername(username);
@@ -59,18 +54,14 @@ public class UserService {
       }
 
       if (file != null && !file.isEmpty()) {
-          String key = s3Service.uploadFile(file, "users");
-          existing.setImageUrl(key);
-      } else if (imageUrl != null && !imageUrl.isBlank()) {
-          existing.setImageUrl(imageUrl);
-      }
+            String key = s3Service.uploadFile(file, "users");
+            String fullUrl = s3Service.getFileUrl(key); 
+            existing.setImageUrl(fullUrl);
+        } else if (imageUrl != null && !imageUrl.isBlank()) {
+            existing.setImageUrl(imageUrl);
+        }
 
       User saved = userRepository.save(existing);
-
-      System.out.println("=== DESPUÉS ===");
-      System.out.println("Username: " + saved.getUsername());
-      System.out.println("ImageUrl: " + saved.getImageUrl());
-      System.out.println("BirthDate: " + saved.getBirthDate());
 
       return mapToDto(saved);
   }
