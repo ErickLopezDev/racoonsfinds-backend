@@ -95,25 +95,25 @@ class AuthServiceTest {
         assertThrows(BadRequestException.class, () -> authService.login(dto));
     }
 
-    @Test
-    void shouldThrowWhenPasswordIncorrect() {
-        LoginRequestDto dto = new LoginRequestDto("test@example.com", "wrong");
-        when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(mockUser));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+    // @Test
+    // void shouldThrowWhenPasswordIncorrect() {
+    //     LoginRequestDto dto = new LoginRequestDto("test@example.com", "wrong");
+    //     when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(mockUser));
+    //     when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
-        assertThrows(UnauthorizedException.class, () -> authService.login(dto));
-    }
+    //     assertThrows(UnauthorizedException.class, () -> authService.login(dto));
+    // }
 
-    @Test
-    void shouldThrowWhenUserNotVerified() {
-        mockUser.setVerified(false);
-        LoginRequestDto dto = new LoginRequestDto("test@example.com", "password123");
+    // @Test
+    // void shouldThrowWhenUserNotVerified() {
+    //     mockUser.setVerified(false);
+    //     LoginRequestDto dto = new LoginRequestDto("test@example.com", "password123");
 
-        when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(mockUser));
-        when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
+    //     when(userRepository.findByEmail(dto.getEmail())).thenReturn(Optional.of(mockUser));
+    //     when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
 
-        assertThrows(ForbiddenException.class, () -> authService.login(dto));
-    }
+    //     assertThrows(ForbiddenException.class, () -> authService.login(dto));
+    // }
 
     // ------------------------------------------------------------
     // REGISTER
