@@ -33,24 +33,27 @@ public class PurchaseServiceImpl implements PurchaseService {
     @Override
     @Transactional
     public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseFromCart(String description) {
-        Long userId = AuthUtil.getAuthenticatedUserId();
-        if (userId == null) throw new NotFoundException("Usuario no autenticado");
+        Long buyerId = AuthUtil.getAuthenticatedUserId();
+        if (buyerId == null) throw new NotFoundException("Usuario no autenticado");
 
-        List<Cart> cartItems = cartRepository.findByUserId(userId);
+        List<Cart> cartItems = cartRepository.findByUserId(buyerId);
         if (cartItems.isEmpty()) throw new NotFoundException("El carrito está vacío");
 
+        // Calcular el total
         BigDecimal total = cartItems.stream()
                 .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getAmount())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Crear la compra
         Purchase purchase = new Purchase();
         purchase.setDate(LocalDate.now());
         purchase.setMonto(total);
         purchase.setDescription(description != null ? description : "Compra desde carrito");
-        purchase.setUser(new User() {{ setId(userId); }});
+        purchase.setUser(new User() {{ setId(buyerId); }});
 
         Purchase savedPurchase = purchaseRepository.save(purchase);
 
+        // Crear los detalles
         List<PurchaseDetail> details = cartItems.stream().map(item -> {
             PurchaseDetail d = new PurchaseDetail();
             d.setPurchase(savedPurchase);
@@ -63,29 +66,50 @@ public class PurchaseServiceImpl implements PurchaseService {
         purchaseDetailRepository.saveAll(details);
         savedPurchase.setPurchaseDetails(details);
 
+        // ============================================================
+        // Crear notificaciones
+        // ============================================================
+
+        // Notificación al comprador
         notificationService.createNotification(
-                userId,
+                buyerId,
                 "Compra realizada",
                 "Tu compra #" + savedPurchase.getId() + " fue procesada con éxito."
         );
 
-        cartRepository.deleteByUserId(userId);
+        // Notificación al vendedor de cada producto comprado
+        details.forEach(detail -> {
+            Long sellerId = detail.getProduct().getUser().getId(); // obtener el dueño del producto
+            if (!sellerId.equals(buyerId)) { // evitar que un usuario se notifique a sí mismo
+                notificationService.createNotification(
+                        sellerId,
+                        "Producto vendido",
+                        "Tu producto '" + detail.getProduct().getName() +
+                        "' ha sido vendido en la compra #" + savedPurchase.getId() + "."
+                );
+            }
+        });
+
+        // Limpiar carrito
+        cartRepository.deleteByUserId(buyerId);
 
         PurchaseResponseDto responseDto = mapToDto(savedPurchase);
-        return ResponseUtil.created("Compra individual realizada con éxito", responseDto);
+        return ResponseUtil.created("Compra realizada con éxito", responseDto);
     }
 
-    // Comprar un solo ítem del carrito
+    /**
+     * Compra individual de un ítem del carrito con notificación dual (vendedor y comprador).
+     */
     @Override
     @Transactional
     public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseOne(Long cartId, String description) {
-        Long userId = AuthUtil.getAuthenticatedUserId();
-        if (userId == null) throw new NotFoundException("Usuario no autenticado");
+        Long buyerId = AuthUtil.getAuthenticatedUserId();
+        if (buyerId == null) throw new NotFoundException("Usuario no autenticado");
 
         Cart cartItem = cartRepository.findById(cartId)
                 .orElseThrow(() -> new NotFoundException("Ítem de carrito no encontrado"));
 
-        if (!cartItem.getUser().getId().equals(userId))
+        if (!cartItem.getUser().getId().equals(buyerId))
             throw new NotFoundException("No puedes comprar un ítem que no es tuyo");
 
         BigDecimal total = cartItem.getProduct().getPrice()
@@ -95,7 +119,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         purchase.setDate(LocalDate.now());
         purchase.setMonto(total);
         purchase.setDescription(description != null ? description : "Compra de un producto");
-        purchase.setUser(new User() {{ setId(userId); }});
+        purchase.setUser(new User() {{ setId(buyerId); }});
 
         Purchase savedPurchase = purchaseRepository.save(purchase);
 
@@ -106,14 +130,29 @@ public class PurchaseServiceImpl implements PurchaseService {
         detail.setAmount(cartItem.getAmount());
 
         purchaseDetailRepository.save(detail);
-
         savedPurchase.setPurchaseDetails(List.of(detail));
 
+        // ============================================================
+        // Crear notificaciones
+        // ============================================================
+
+        // Notificación al comprador
         notificationService.createNotification(
-                userId,
+                buyerId,
                 "Compra individual realizada",
-                "Has comprado el producto " + cartItem.getProduct().getName()
+                "Has comprado el producto '" + cartItem.getProduct().getName() + "'."
         );
+
+        // 💼 Notificación al vendedor
+        Long sellerId = cartItem.getProduct().getUser().getId();
+        if (!sellerId.equals(buyerId)) {
+            notificationService.createNotification(
+                    sellerId,
+                    "Producto vendido",
+                    "Tu producto '" + cartItem.getProduct().getName() +
+                    "' fue comprado por un usuario."
+            );
+        }
 
         cartRepository.delete(cartItem);
 
