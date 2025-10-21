@@ -73,28 +73,37 @@ public class ProductService {
     }
 
     public PagedResponse<ProductResponseDto> findAllPagedByUserId(
-        int page,
-        int size,
-        String sortBy,
-        String sortDir) {
-        
+            int page,
+            int size,
+            Long categoryId,
+            String search,
+            String sortBy,
+            String sortDir
+    ) {
         Long userId = AuthUtil.getAuthenticatedUserId();
-
         if (userId == null) {
-            throw new ResourceNotFoundException("ID de usuario requerido");
+            throw new ResourceNotFoundException("Usuario no autenticado");
         }
 
-        if (size > 50) size = 50;
+        // Seguridad: limitar tamaño máximo
+        size = Math.min(size, 50);
+        page = Math.max(page, 0);
 
-        Sort sort = sortDir.equalsIgnoreCase("asc")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-
+        // Configurar orden dinámico
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Page<Product> products = productRepository.findByUserId(userId, pageable);
+        // Sanitizar búsqueda
+        String searchTerm = (search != null) ? search.trim() : null;
 
-        List<ProductResponseDto> dtoList = products.getContent().stream()
+        // Repositorio con filtro dinámico (usando @Query)
+        Page<Product> products = productRepository.searchProductsByUser(
+                userId, categoryId, searchTerm, pageable
+        );
+
+        // Mapear a DTO
+        List<ProductResponseDto> dtoList = products
+                .stream()
                 .map(this::mapToDto)
                 .toList();
 
@@ -107,41 +116,50 @@ public class ProductService {
         );
     }
 
+
     public PagedResponse<ProductResponseDto> findAllPaged(
             int page,
             int size,
             Long categoryId,
             String search,
             String sortBy,
-            String sortDir) {
+            String sortDir
+    ) {
+        // Seguridad: limitar tamaño máximo
+        size = Math.min(size, 50);
+        page = Math.max(page, 0);
 
-        // Límite de tamaño máximo por seguridad
-        if (size > 50) size = 50;
-
-        Sort sort = sortDir.equalsIgnoreCase("asc")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-
+        // Configurar orden dinámico
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Sanitizar búsqueda
+        String searchTerm = (search != null) ? search.trim() : null;
 
         Page<Product> products;
 
-        if (categoryId != null && search != null && !search.isEmpty()) {
-            products = productRepository.findByCategoryIdAndNameContainingIgnoreCase(categoryId, search, pageable);
+        // Filtro combinado flexible
+        if (categoryId != null && searchTerm != null && !searchTerm.isEmpty()) {
+            products = productRepository.findByCategoryIdAndNameContainingIgnoreCaseOrCategoryIdAndDescriptionContainingIgnoreCase(
+                    categoryId, searchTerm, categoryId, searchTerm, pageable
+            );
         } else if (categoryId != null) {
             products = productRepository.findByCategoryId(categoryId, pageable);
-        } else if (search != null && !search.isEmpty()) {
-            products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(search, search, pageable);
+        } else if (searchTerm != null && !searchTerm.isEmpty()) {
+            products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+                    searchTerm, searchTerm, pageable
+            );
         } else {
             products = productRepository.findAll(pageable);
         }
 
-        // Mapear resultados a DTO
+        // Mapear resultados
         List<ProductResponseDto> dtoList = products
-                .map(p -> mapToDto(p))
-                .getContent();
+                .stream()
+                .map(this::mapToDto)
+                .toList();
 
-        // Retornar estructura con metadata
+        // Estructura de respuesta
         return new PagedResponse<>(
                 dtoList,
                 products.getNumber(),
@@ -150,6 +168,7 @@ public class ProductService {
                 products.getSize()
         );
     }
+
 
     public ProductResponseDto getById(Long id) {
         Product product = productRepository.findById(id)

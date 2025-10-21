@@ -75,29 +75,33 @@ public class ProductController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<PagedResponse<ProductResponseDto>>> all(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(required = false) Long categoryId,
-        @RequestParam(required = false) String search,
-        @RequestParam(required = false, defaultValue = "createdDate") String sortBy,
-        @RequestParam(required = false, defaultValue = "desc") String sortDir
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "createdDate") String sortBy,
+            @RequestParam(required = false, defaultValue = "desc") String sortDir
     ) {
         return ResponseUtil.ok("Productos obtenidos correctamente",
-            productService.findAllPaged(page, size, categoryId, search, sortBy, sortDir));
+                productService.findAllPaged(page, size, categoryId, search, sortBy, sortDir));
     }
+
 
    @GetMapping("/user")
     public ResponseEntity<ApiResponse<PagedResponse<ProductResponseDto>>> getProductsByUser(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "createdDate") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir
     ) {
         return ResponseUtil.ok(
             "Productos del usuario obtenidos correctamente",
-            productService.findAllPagedByUserId(page, size, sortBy, sortDir)
+            productService.findAllPagedByUserId(page, size, categoryId, search, sortBy, sortDir)
         );
     }
+
 
 
     @DeleteMapping("/{id}")
