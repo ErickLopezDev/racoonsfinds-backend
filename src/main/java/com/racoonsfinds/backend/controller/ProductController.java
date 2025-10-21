@@ -62,10 +62,26 @@ public class ProductController {
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public ResponseEntity<ApiResponse<ProductResponseDto>> update(
             @PathVariable Long id,
-            @RequestPart(value = "file", required = false) MultipartFile file,
-            @RequestPart("product") String productJson) throws IOException {
-        return ResponseUtil.ok("Producto actualizado correctamente", productService.updateProduct(id, file, productJson));
+            @RequestPart(value = "name", required = false) String name,
+            @RequestPart(value = "stock", required = false) String stock,
+            @RequestPart(value = "price", required = false) String price,
+            @RequestPart(value = "description", required = false) String description,
+            @RequestPart(value = "categoryId", required = false) String categoryId,
+            @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
+
+        // Crear el DTO como en create()
+        ProductRequestDto productRequestDto = ProductRequestDto.builder()
+                .name(name)
+                .stock(stock != null ? Integer.parseInt(stock) : null)
+                .price(price != null ? new BigDecimal(price) : null)
+                .description(description)
+                .categoryId(categoryId != null ? Long.parseLong(categoryId) : null)
+                .build();
+
+        ProductResponseDto dto = productService.updateProduct(id, file, productRequestDto);
+        return ResponseUtil.ok("Producto actualizado correctamente", dto);
     }
+
 
 
     @GetMapping("/{id}")

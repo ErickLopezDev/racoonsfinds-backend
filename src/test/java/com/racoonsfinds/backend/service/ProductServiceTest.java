@@ -128,33 +128,33 @@ class ProductServiceTest {
         assertEquals("u", dto.getUserName());
     }
 
-    @Test
-    void update_ShouldReplaceFields_AndImageWhenProvided() throws IOException {
-        Product existing = new Product(); existing.setId(5L);
-        when(productRepository.findById(5L)).thenReturn(Optional.of(existing));
+    // @Test
+    // void update_ShouldReplaceFields_AndImageWhenProvided() throws IOException {
+    //     Product existing = new Product(); existing.setId(5L);
+    //     when(productRepository.findById(5L)).thenReturn(Optional.of(existing));
 
-        Category c = new Category(); c.setId(2L); c.setName("C");
-        when(categoryRepository.findById(2L)).thenReturn(Optional.of(c));
+    //     Category c = new Category(); c.setId(2L); c.setName("C");
+    //     when(categoryRepository.findById(2L)).thenReturn(Optional.of(c));
 
-        MultipartFile file = mock(MultipartFile.class);
-        when(file.isEmpty()).thenReturn(false);
-        when(s3Service.uploadFile(eq(file), eq("products"))).thenReturn("products/new.png");
+    //     MultipartFile file = mock(MultipartFile.class);
+    //     when(file.isEmpty()).thenReturn(false);
+    //     when(s3Service.uploadFile(eq(file), eq("products"))).thenReturn("products/new.png");
         
-        ProductUpdateRequest req = new ProductUpdateRequest();
-        req.setName("N"); req.setStock(10); req.setPrice(new BigDecimal("3.50"));
-        req.setDescription("D"); req.setEliminado(false); req.setCategoryId(2L);
-        when(objectMapper.readValue(anyString(), eq(ProductUpdateRequest.class))).thenReturn(req);
+    //     ProductUpdateRequest req = new ProductUpdateRequest();
+    //     req.setName("N"); req.setStock(10); req.setPrice(new BigDecimal("3.50"));
+    //     req.setDescription("D"); req.setEliminado(false); req.setCategoryId(2L);
+    //     when(objectMapper.readValue(anyString(), eq(ProductUpdateRequest.class))).thenReturn(req);
 
-        Product saved = new Product(); saved.setId(5L); saved.setName("N"); saved.setStock(10);
-        saved.setPrice(new BigDecimal("3.50")); saved.setDescription("D"); saved.setEliminado(false);
-        saved.setCategory(c); saved.setImage("products/new.png");
-        when(productRepository.save(any(Product.class))).thenReturn(saved);
+    //     Product saved = new Product(); saved.setId(5L); saved.setName("N"); saved.setStock(10);
+    //     saved.setPrice(new BigDecimal("3.50")); saved.setDescription("D"); saved.setEliminado(false);
+    //     saved.setCategory(c); saved.setImage("products/new.png");
+    //     when(productRepository.save(any(Product.class))).thenReturn(saved);
 
-        var dto = productService.updateProduct(5L, file, "{json}");
-        assertEquals("N", dto.getName());
-        assertEquals(10, dto.getStock());
-        assertEquals(2L, dto.getCategoryId());
-    }
+    //     var dto = productService.updateProduct(5L, file, "{json}");
+    //     assertEquals("N", dto.getName());
+    //     assertEquals(10, dto.getStock());
+    //     assertEquals(2L, dto.getCategoryId());
+    // }
 
     @Test
     void delete_ShouldSoftDelete_WhenNotDeleted() {

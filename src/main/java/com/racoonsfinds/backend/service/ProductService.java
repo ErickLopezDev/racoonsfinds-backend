@@ -177,40 +177,31 @@ public class ProductService {
     }
 
     @Transactional
-    public ProductResponseDto updateProduct(Long id, MultipartFile file, String productJson) throws IOException {
-        ProductUpdateRequest req = objectMapper.readValue(productJson, ProductUpdateRequest.class);
+    public ProductResponseDto updateProduct(Long id, MultipartFile file, ProductRequestDto req) throws IOException {
+        Product existing = productRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + id));
 
-        // El ID de la ruta siempre manda
-        if (req.getId() == null) {
-            req.setId(id);
-        }
-
-        Product existing = productRepository.findById(req.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + req.getId()));
-
-        // Actualizamos manualmente los campos simples (sin tocar relaciones ni ID)
+        // Actualizamos los campos si vienen valores
         if (req.getName() != null) existing.setName(req.getName());
         if (req.getStock() != null) existing.setStock(req.getStock());
         if (req.getPrice() != null) existing.setPrice(req.getPrice());
         if (req.getDescription() != null) existing.setDescription(req.getDescription());
-        if (req.getEliminado() != null) existing.setEliminado(req.getEliminado());
 
-        // Actualizamos categoría solo si viene un ID válido
+        // Actualizar categoría si se envía
         if (req.getCategoryId() != null) {
             Category cat = categoryRepository.findById(req.getCategoryId())
                     .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
             existing.setCategory(cat);
         }
 
-        // Si se envía un nuevo archivo, se reemplaza la imagen
+        // Actualizar imagen solo si llega una nueva
         if (file != null && !file.isEmpty()) {
             String key = s3Service.uploadFile(file, "products");
             existing.setImage(key);
         }
 
-        // Guardamos los cambios
         Product saved = productRepository.save(existing);
-        return mapToDto(saved);
+        return MapperUtil.map(saved, ProductResponseDto.class);
     }
 
     @Transactional

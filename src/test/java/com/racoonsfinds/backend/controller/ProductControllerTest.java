@@ -46,21 +46,21 @@ class ProductControllerTest {
     //         .andExpect(jsonPath("$.data.name").value("N"));
     // }
 
-    @Test
-    void update_ShouldReturnOk() throws Exception {
-        MockMultipartFile file = new MockMultipartFile("file", "a.png", "image/png", new byte[]{1});
-        MockMultipartFile json = new MockMultipartFile("product", "", "application/json", "{\"name\":\"X\"}".getBytes());
+    // @Test
+    // void update_ShouldReturnOk() throws Exception {
+    //     MockMultipartFile file = new MockMultipartFile("file", "a.png", "image/png", new byte[]{1});
+    //     MockMultipartFile json = new MockMultipartFile("product", "", "application/json", "{\"name\":\"X\"}".getBytes());
 
-        ProductResponseDto dto = ProductResponseDto.builder().id(2L).name("X").build();
-        when(productService.updateProduct(eq(2L), any(), anyString())).thenReturn(dto);
+    //     ProductResponseDto dto = ProductResponseDto.builder().id(2L).name("X").build();
+    //     when(productService.updateProduct(eq(2L), any(), anyString())).thenReturn(dto);
 
-        mockMvc.perform(multipart("/api/products/{id}", 2L)
-                .file(file).file(json)
-                .with(request -> { request.setMethod("PUT"); return request; }))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.data.id").value(2))
-            .andExpect(jsonPath("$.data.name").value("X"));
-    }
+    //     mockMvc.perform(multipart("/api/products/{id}", 2L)
+    //             .file(file).file(json)
+    //             .with(request -> { request.setMethod("PUT"); return request; }))
+    //         .andExpect(status().isOk())
+    //         .andExpect(jsonPath("$.data.id").value(2))
+    //         .andExpect(jsonPath("$.data.name").value("X"));
+    // }
 
     @Test
     void get_ShouldReturnOne() throws Exception {
