@@ -46,9 +46,9 @@ public class AuthController {
     }
 
     @PostMapping("/verify")
-    public ResponseEntity<ApiResponse<Void>> verify(@Valid @RequestBody VerifyCodeDto dto) {
-        authService.verifyCode(dto);
-        return ResponseUtil.ok("Cuenta verificada correctamente");
+    public ResponseEntity<ApiResponse<AuthResponseDto>> verify(@Valid @RequestBody VerifyCodeDto dto) {
+        AuthResponseDto verified = authService.verifyCode(dto);
+        return ResponseUtil.ok("Cuenta verificada correctamente", verified);
     }
 
     @PostMapping("/resend")

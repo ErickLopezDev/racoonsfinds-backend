@@ -124,7 +124,7 @@ public class AuthService {
     // VERIFICAR CÓDIGO
     // ------------------------------------------------------------
     @Transactional
-    public void verifyCode(VerifyCodeDto dto) {
+    public AuthResponseDto verifyCode(VerifyCodeDto dto) {
         var opt = userRepository.findByEmail(dto.getEmail());
         if (opt.isEmpty()) throw new NotFoundException("Usuario no encontrado.");
 
@@ -146,6 +146,11 @@ public class AuthService {
         user.setVerificationCode(null);
         user.setCodeExpiry(null);
         userRepository.save(user);
+
+        String access = jwtUtil.generateToken(String.valueOf(user.getId()));
+        RefreshToken refresh = refreshTokenService.createRefreshToken(user);
+
+        return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, access, refresh.getToken());
     }
 
     // ------------------------------------------------------------
