@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.cart.CartRequestDto;
 import com.racoonsfinds.backend.dto.cart.CartResponseDto;
-import com.racoonsfinds.backend.service.int_.CartService;
+import com.racoonsfinds.backend.service.CartServiceImpl;
 import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CartController {
 
-    private final CartService cartService;
+    private final CartServiceImpl cartService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<CartResponseDto>> addToCart(@RequestBody CartRequestDto dto) {
