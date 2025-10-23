@@ -20,7 +20,7 @@ import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/notifications")
+@RequestMapping("api/notifications")
 @RequiredArgsConstructor
 public class NotificationController {
 
