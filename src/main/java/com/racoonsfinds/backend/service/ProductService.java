@@ -97,9 +97,14 @@ public class ProductService {
         String searchTerm = (search != null) ? search.trim() : null;
 
         // Repositorio con filtro dinámico (usando @Query)
-        Page<Product> products = productRepository.searchProductsByUser(
-                userId, categoryId, searchTerm, pageable
-        );
+        Page<Product> products;
+        if (searchTerm == null && categoryId == null) {
+            products = productRepository.findAllByUserId(userId, pageable);
+        } else if (searchTerm == null) {
+            products = productRepository.findByUserIdAndCategoryId(userId, categoryId, pageable);
+        } else {
+            products = productRepository.searchProductsByUserAndText(userId, categoryId, searchTerm, pageable);
+        }
 
         // Mapear a DTO
         List<ProductResponseDto> dtoList = products
