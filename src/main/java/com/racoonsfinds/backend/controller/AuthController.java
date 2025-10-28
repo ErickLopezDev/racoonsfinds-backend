@@ -14,7 +14,7 @@ import com.racoonsfinds.backend.dto.auth.password.ResetPasswordDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
 import com.racoonsfinds.backend.dto.auth.resend.RequestResendDto;
 import com.racoonsfinds.backend.dto.auth.verify.VerifyCodeDto;
-import com.racoonsfinds.backend.service.AuthService;
+import com.racoonsfinds.backend.service.int_.AuthService;
 import com.racoonsfinds.backend.shared.const_.UserStatus;
 import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 

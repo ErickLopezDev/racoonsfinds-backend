@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
-import com.racoonsfinds.backend.service.PurchaseServiceImpl;
+import com.racoonsfinds.backend.service.int_.PurchaseService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SalesController {
 
-  private final PurchaseServiceImpl purchaseService;
+  private final PurchaseService purchaseService;
 
   @GetMapping("/")
   public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getSalesByUser() {

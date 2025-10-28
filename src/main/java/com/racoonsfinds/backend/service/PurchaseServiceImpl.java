@@ -143,7 +143,7 @@ public class PurchaseServiceImpl implements PurchaseService {
                 "Has comprado el producto '" + cartItem.getProduct().getName() + "'."
         );
 
-        // 💼 Notificación al vendedor
+        // Notificación al vendedor
         Long sellerId = cartItem.getProduct().getUser().getId();
         if (!sellerId.equals(buyerId)) {
             notificationService.createNotification(

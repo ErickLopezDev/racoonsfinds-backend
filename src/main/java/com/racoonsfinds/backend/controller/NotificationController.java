@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.notification.NotificationResponseDto;
 import com.racoonsfinds.backend.model.Notification;
-import com.racoonsfinds.backend.service.NotificationServiceImpl;
+import com.racoonsfinds.backend.service.int_.NotificationService;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 import com.racoonsfinds.backend.shared.utils.ResponseUtil;
@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class NotificationController {
 
-    private final NotificationServiceImpl notificationService;
+    private final NotificationService notificationService;
 
     /**
      * Obtener las notificaciones del usuario autenticado.

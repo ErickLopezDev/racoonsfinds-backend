@@ -13,12 +13,13 @@ import org.springframework.web.bind.annotation.RestController;
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
 import com.racoonsfinds.backend.service.PurchaseServiceImpl;
+import com.racoonsfinds.backend.service.int_.PurchaseService;
 
 @RestController
 @RequestMapping("/api/purchases")
 public class PurchaseController {
 
-    private final PurchaseServiceImpl purchaseService;
+    private final PurchaseService purchaseService;
 
     public PurchaseController(PurchaseServiceImpl purchaseService) {
         this.purchaseService = purchaseService;

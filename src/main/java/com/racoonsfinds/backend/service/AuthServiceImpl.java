@@ -17,6 +17,7 @@ import com.racoonsfinds.backend.model.RefreshToken;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.security.JwtUtil;
+import com.racoonsfinds.backend.service.int_.AuthService;
 import com.racoonsfinds.backend.service.int_.EmailService;
 import com.racoonsfinds.backend.shared.const_.UserStatus;
 import com.racoonsfinds.backend.shared.exception.*;
@@ -26,7 +27,7 @@ import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor
-public class AuthService {
+public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
