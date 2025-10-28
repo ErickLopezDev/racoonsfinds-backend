@@ -7,7 +7,7 @@ import com.racoonsfinds.backend.model.RefreshToken;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.security.JwtUtil;
-import com.racoonsfinds.backend.service.int_.AuthService;
+import com.racoonsfinds.backend.service.AuthServiceImpl;
 import com.racoonsfinds.backend.service.int_.EmailService;
 import com.racoonsfinds.backend.shared.exception.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,7 +44,7 @@ class AuthServiceTest {
     private EmailService emailService;
 
     @InjectMocks
-    private AuthService authService;
+    private AuthServiceImpl authService;
 
     private User mockUser;
 

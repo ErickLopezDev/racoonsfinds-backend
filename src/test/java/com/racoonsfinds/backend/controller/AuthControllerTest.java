@@ -7,7 +7,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.racoonsfinds.backend.dto.auth.password.ForgotPasswordDto;
 import com.racoonsfinds.backend.dto.auth.password.ResetPasswordDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
-import com.racoonsfinds.backend.service.int_.AuthService;
+import com.racoonsfinds.backend.service.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +29,7 @@ import java.time.LocalDate;
 class AuthControllerTest {
 
     @Mock
-    private AuthService authService;
+    private AuthServiceImpl authService;
 
     @InjectMocks
     private AuthController authController;
