@@ -39,14 +39,9 @@ public class PurchaseController {
         return purchaseService.purchaseOne(cartId, description);
     }
 
-    @GetMapping("/my-purchases")
+    @GetMapping("/")
     public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMyPurchases() {
         return purchaseService.getMyPurchases();
-    }
-
-    @GetMapping("/my-sales")
-    public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMySales() {
-        return purchaseService.getMySales();
     }
     
 }
