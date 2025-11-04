@@ -19,7 +19,7 @@ import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.products.PagedResponse;
 import com.racoonsfinds.backend.dto.products.ProductRequestDto;
 import com.racoonsfinds.backend.dto.products.ProductResponseDto;
-import com.racoonsfinds.backend.service.ProductService;
+import com.racoonsfinds.backend.service.int_.ProductService;
 import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 
 import lombok.RequiredArgsConstructor;

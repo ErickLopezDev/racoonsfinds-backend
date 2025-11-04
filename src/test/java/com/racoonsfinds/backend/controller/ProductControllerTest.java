@@ -2,7 +2,7 @@ package com.racoonsfinds.backend.controller;
 
 import com.racoonsfinds.backend.dto.products.PagedResponse;
 import com.racoonsfinds.backend.dto.products.ProductResponseDto;
-import com.racoonsfinds.backend.service.ProductService;
+import com.racoonsfinds.backend.service.ProductServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ExtendWith(MockitoExtension.class)
 class ProductControllerTest {
 
-    @Mock private ProductService productService;
+    @Mock private ProductServiceImpl productService;
     @InjectMocks private ProductController productController;
 
     private MockMvc mockMvc;

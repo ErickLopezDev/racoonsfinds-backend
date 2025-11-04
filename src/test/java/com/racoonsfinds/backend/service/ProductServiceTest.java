@@ -3,7 +3,6 @@ package com.racoonsfinds.backend.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 // import com.racoonsfinds.backend.dto.products.ProductRequestDto;
 // import com.racoonsfinds.backend.dto.products.ProductResponseDto;
-import com.racoonsfinds.backend.dto.products.ProductUpdateRequest;
 import com.racoonsfinds.backend.model.Category;
 import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
@@ -24,10 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,7 +41,7 @@ class ProductServiceTest {
     @Mock private ObjectMapper objectMapper;
 
     @InjectMocks
-    private ProductService productService;
+    private ProductServiceImpl productService;
 
     @BeforeEach
     void setupAuth() {

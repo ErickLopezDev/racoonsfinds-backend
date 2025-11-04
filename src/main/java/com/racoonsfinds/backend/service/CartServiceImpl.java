@@ -15,6 +15,7 @@ import com.racoonsfinds.backend.repository.CartRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.CartService;
+import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -73,6 +74,39 @@ public class CartServiceImpl implements CartService {
         Long userId = AuthUtil.getAuthenticatedUserId();
         List<Cart> items = cartRepository.findByUserId(userId);
         cartRepository.deleteAll(items);
+    }
+
+    @Transactional
+    public CartItemResponseDto updateQuantity(Long productId, UpdateCartQuantityDto request) {
+        Long userId = AuthUtil.getAuthenticatedUserId();
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+
+        CartItem cartItem = cartRepository.findByUserIdAndProductId(userId, productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Producto no está en el carrito"));
+
+        int newQuantity = request.getQuantity();
+
+        if (newQuantity <= 0) {
+            cartRepository.delete(cartItem);
+            return null; // o devolver una respuesta vacía con un código 204 desde el controller
+        }
+
+        // validar stock disponible
+        if (newQuantity > product.getStock()) {
+            throw new IllegalArgumentException("Cantidad supera el stock disponible");
+        }
+
+        cartItem.setQuantity(newQuantity);
+        cartRepository.save(cartItem);
+
+        return new CartItemResponseDto(
+            product.getId(),
+            product.getName(),
+            cartItem.getQuantity(),
+            product.getPrice() * cartItem.getQuantity()
+        );
     }
 
     private CartResponseDto buildResponseDto(Cart cart) {

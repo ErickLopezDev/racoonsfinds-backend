@@ -11,17 +11,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.racoonsfinds.backend.dto.products.PagedResponse;
 import com.racoonsfinds.backend.dto.products.ProductRequestDto;
 import com.racoonsfinds.backend.dto.products.ProductResponseDto;
-import com.racoonsfinds.backend.dto.products.ProductUpdateRequest;
 import com.racoonsfinds.backend.model.Category;
 import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.CategoryRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
+import com.racoonsfinds.backend.service.int_.ProductService;
 import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 import com.racoonsfinds.backend.shared.utils.MapperUtil; 
@@ -31,13 +30,12 @@ import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor
-public class ProductService {
+public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
-    private final ObjectMapper objectMapper;
 
     @Transactional
     public ProductResponseDto createProduct(MultipartFile file, ProductRequestDto req) throws IOException {
