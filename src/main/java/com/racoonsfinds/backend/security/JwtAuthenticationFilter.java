@@ -30,7 +30,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-
+        
         String authHeader = request.getHeader("Authorization");
         String accessToken = null;
         if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
@@ -67,7 +67,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
+    
+    
     private void setAuthentication(String userId) {
         // para simplificar seteamos Authentication con username = userId; en producción
         // debes cargar roles/authorities desde DB o UserDetailsService
@@ -76,12 +77,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     @Override
-protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-    String path = request.getRequestURI();
-    return path.matches("^/api/auth(/.*)?$")
-        || path.startsWith("/swagger")
-        || path.startsWith("/v3/api-docs")
-        || path.equals("/error"); // importante para evitar 403 internos
-}
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+        String path = request.getRequestURI();
+        return path.startsWith("/actuator")  
+            ||  path.matches("^/api/auth(/.*)?$")   // auth público
+            || path.startsWith("/swagger")         // swagger público
+            || path.startsWith("/v3/api-docs")     // swagger docs público     
+            || path.equals("/error");              // error page
+    }
 
 }

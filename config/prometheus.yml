@@ -1,0 +1,10 @@
+# En el archivo prometheus.yml que se usa en Docker Compose
+scrape_configs:
+  - job_name: "racoonsfinds-backend"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["racoonsfinds_backend:8080"] # <-- ¡Esto es lo correcto!
+    # Incluir la basic_auth si el 400 anterior era por autenticación
+    basic_auth:
+      username: prometheus
+      password: prometheus_password

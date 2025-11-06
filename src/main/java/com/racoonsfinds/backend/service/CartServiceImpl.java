@@ -6,8 +6,10 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.racoonsfinds.backend.dto.cart.CartItemresponseDto;
 import com.racoonsfinds.backend.dto.cart.CartRequestDto;
 import com.racoonsfinds.backend.dto.cart.CartResponseDto;
+import com.racoonsfinds.backend.dto.cart.UpdateCartQuantityDto;
 import com.racoonsfinds.backend.model.Cart;
 import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
@@ -76,38 +78,38 @@ public class CartServiceImpl implements CartService {
         cartRepository.deleteAll(items);
     }
 
-    @Transactional
-    public CartItemResponseDto updateQuantity(Long productId, UpdateCartQuantityDto request) {
-        Long userId = AuthUtil.getAuthenticatedUserId();
+    // @Transactional
+    // public CartItemresponseDto updateQuantity(Long productId, UpdateCartQuantityDto request) {
+    //     Long userId = AuthUtil.getAuthenticatedUserId();
 
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
+    //     Product product = productRepository.findById(productId)
+    //             .orElseThrow(() -> new ResourceNotFoundException("Producto no encontrado"));
 
-        CartItem cartItem = cartRepository.findByUserIdAndProductId(userId, productId)
-                .orElseThrow(() -> new ResourceNotFoundException("Producto no está en el carrito"));
+    //     Cart cartItem = cartRepository.findByUserIdAndProductId(userId, productId)
+    //             .orElseThrow(() -> new ResourceNotFoundException("Producto no está en el carrito"));
 
-        int newQuantity = request.getQuantity();
+    //     int newQuantity = request.getQuantity();
 
-        if (newQuantity <= 0) {
-            cartRepository.delete(cartItem);
-            return null; // o devolver una respuesta vacía con un código 204 desde el controller
-        }
+    //     if (newQuantity <= 0) {
+    //         cartRepository.delete(cartItem);
+    //         return null; // o devolver una respuesta vacía con un código 204 desde el controller
+    //     }
 
-        // validar stock disponible
-        if (newQuantity > product.getStock()) {
-            throw new IllegalArgumentException("Cantidad supera el stock disponible");
-        }
+    //     // validar stock disponible
+    //     if (newQuantity > product.getStock()) {
+    //         throw new IllegalArgumentException("Cantidad supera el stock disponible");
+    //     }
 
-        cartItem.setQuantity(newQuantity);
-        cartRepository.save(cartItem);
+    //     cartItem.setQuantity(newQuantity);
+    //     cartRepository.save(cartItem);
 
-        return new CartItemResponseDto(
-            product.getId(),
-            product.getName(),
-            cartItem.getQuantity(),
-            product.getPrice() * cartItem.getQuantity()
-        );
-    }
+    //     return new CartItemResponseDto(
+    //         product.getId(),
+    //         product.getName(),
+    //         cartItem.getQuantity(),
+    //         product.getPrice() * cartItem.getQuantity()
+    //     );
+    // }
 
     private CartResponseDto buildResponseDto(Cart cart) {
         Product product = cart.getProduct();

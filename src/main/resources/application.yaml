@@ -1,4 +1,8 @@
 spring:
+  security:
+    user:
+      name: prometheus
+      password: prometheus_password
   application:
     name: racoonsfinds-backend
 
@@ -54,3 +58,15 @@ aws:
   region: ${AWS_REGION}
   s3:
     bucket: ${S3_BUCKET}
+
+management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
