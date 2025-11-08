@@ -1,5 +1,7 @@
 package com.racoonsfinds.backend.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -11,6 +13,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.firewall.DefaultHttpFirewall;
+import org.springframework.security.web.firewall.HttpFirewall;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -19,8 +23,6 @@ import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.security.JwtAuthenticationFilter;
 import com.racoonsfinds.backend.security.JwtUtil;
 import com.racoonsfinds.backend.service.RefreshTokenService;
-
-import java.util.List;
 
 import lombok.AllArgsConstructor;
 
@@ -39,21 +41,22 @@ public class SecurityConfig {
 
         return http
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource())) 
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
+                // Rutas públicas
                 .requestMatchers(
                     "/api/auth/**",
-                    "/api/products",
                     "/api/products/**",
-                    "/api/categories",
                     "/api/categories/**",
                     "/v3/api-docs/**",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
                     "/swagger-resources/**",
+                    "/actuator/**",
                     "/error"
                 ).permitAll()
+                // Todas las demás rutas requieren autenticación
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
@@ -63,7 +66,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:4200","https://racoonsfinds.shop", "https://www.racoonsfinds.shop"));
+        config.setAllowedOrigins(List.of("*")); // solo para pruebas
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
@@ -81,5 +84,10 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public HttpFirewall defaultHttpFirewall() { 
+        return new DefaultHttpFirewall();
     }
 }
