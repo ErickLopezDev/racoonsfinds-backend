@@ -21,6 +21,7 @@ import com.racoonsfinds.backend.service.int_.AuthService;
 import com.racoonsfinds.backend.service.int_.EmailService;
 import com.racoonsfinds.backend.shared.const_.UserStatus;
 import com.racoonsfinds.backend.shared.exception.*;
+import com.racoonsfinds.backend.shared.utils.AuthUtil;
 import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
 import lombok.AllArgsConstructor;
@@ -236,11 +237,13 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Transactional
-    public void resetPassword(Long userId, String code, String newPassword) {
-        var optUser = userRepository.findById(userId);
-        if (optUser.isEmpty()) throw new NotFoundException("Usuario no encontrado.");
+    public AuthResponseDto resetPassword(String code, String newPassword) {
 
-        User user = optUser.get();
+        var userId = AuthUtil.getAuthenticatedUserId();
+        if (userId == null) throw new UnauthorizedException("Usuario no autenticado.");
+        
+        var user = userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException("Usuario no encontrado."));
 
         if (user.getVerificationCode() == null || user.getCodeExpiry().isBefore(LocalDateTime.now())) {
             throw new ForbiddenException("Código inválido o expirado.");
@@ -254,5 +257,10 @@ public class AuthServiceImpl implements AuthService {
         user.setVerificationCode(null);
         user.setCodeExpiry(null);
         userRepository.save(user);
+        
+        String access = jwtUtil.generateToken(String.valueOf(user.getId()));
+        RefreshToken refresh = refreshTokenService.createRefreshToken(user);
+
+        return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, access, refresh.getToken());
     }
 }

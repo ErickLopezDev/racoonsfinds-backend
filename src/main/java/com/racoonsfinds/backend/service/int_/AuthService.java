@@ -12,5 +12,5 @@ public interface AuthService {
   void register(RegisterRequestDto dto);
   void resendVerification(RequestResendDto dto);
   void forgotPassword(String email);
-  void resetPassword(Long userId, String code, String newPassword);
+  AuthResponseDto resetPassword(String code, String newPassword);
 }

@@ -40,7 +40,7 @@ public class PurchaseController {
         return purchaseService.purchaseOne(cartId, description);
     }
 
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMyPurchases() {
         return purchaseService.getMyPurchases();
     }

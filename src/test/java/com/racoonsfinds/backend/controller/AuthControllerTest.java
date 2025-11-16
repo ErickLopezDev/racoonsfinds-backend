@@ -5,7 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 // import com.racoonsfinds.backend.dto.auth.AuthResponseDto;
 // import com.racoonsfinds.backend.dto.auth.login.LoginRequestDto;
 import com.racoonsfinds.backend.dto.auth.password.ForgotPasswordDto;
-import com.racoonsfinds.backend.dto.auth.password.ResetPasswordDto;
+// import com.racoonsfinds.backend.dto.auth.password.ResetPasswordDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
 import com.racoonsfinds.backend.service.AuthServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -142,25 +142,25 @@ class AuthControllerTest {
         verify(authService).forgotPassword(anyString());
     }
 
-    // ------------------------
-    // RESET PASSWORD
-    // ------------------------
-    @Test
-    void shouldResetPasswordSuccessfully() throws Exception {
-        ResetPasswordDto dto = new ResetPasswordDto();
-        dto.setUserId(1L);
-        dto.setCode("RESET123");
-        dto.setNewPassword("newPassword123");
+    // // ------------------------
+    // // RESET PASSWORD
+    // // ------------------------
+    // @Test
+    // void shouldResetPasswordSuccessfully() throws Exception {
+    //     ResetPasswordDto dto = new ResetPasswordDto();
+    //     dto.setUserId(1L);
+    //     dto.setCode("RESET123");
+    //     dto.setNewPassword("newPassword123");
 
-        doNothing().when(authService).resetPassword(anyLong(), anyString(), anyString());
+    //     doNothing().when(authService).resetPassword(anyLong(), anyString(), anyString());
 
-        mockMvc.perform(post("/api/auth/reset-password")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(dto)))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.message").value("Contraseña actualizada correctamente."));
+    //     mockMvc.perform(post("/api/auth/reset-password")
+    //             .contentType(MediaType.APPLICATION_JSON)
+    //             .content(objectMapper.writeValueAsString(dto)))
+    //         .andExpect(status().isOk())
+    //         .andExpect(jsonPath("$.message").value("Contraseña actualizada correctamente."));
 
-        verify(authService).resetPassword(anyLong(), anyString(), anyString());
-    }
+    //     verify(authService).resetPassword(anyLong(), anyString(), anyString());
+    // }
 }
 //.

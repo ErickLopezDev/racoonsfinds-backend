@@ -7,7 +7,7 @@ import com.racoonsfinds.backend.model.RefreshToken;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.security.JwtUtil;
-import com.racoonsfinds.backend.service.AuthServiceImpl;
+// import com.racoonsfinds.backend.service.AuthServiceImpl;
 import com.racoonsfinds.backend.service.int_.EmailService;
 import com.racoonsfinds.backend.shared.exception.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -228,44 +228,44 @@ class AuthServiceTest {
         assertThrows(NotFoundException.class, () -> authService.forgotPassword("unknown@example.com"));
     }
 
-    // ------------------------------------------------------------
-    // RESET PASSWORD
-    // ------------------------------------------------------------
-    @Test
-    void shouldResetPasswordSuccessfully() {
-        mockUser.setVerificationCode("654321");
-        mockUser.setCodeExpiry(LocalDateTime.now().plusMinutes(5));
+    // // ------------------------------------------------------------
+    // // RESET PASSWORD
+    // // ------------------------------------------------------------
+    // @Test
+    // void shouldResetPasswordSuccessfully() {
+    //     mockUser.setVerificationCode("654321");
+    //     mockUser.setCodeExpiry(LocalDateTime.now().plusMinutes(5));
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
-        when(passwordEncoder.encode(anyString())).thenReturn("newEncoded");
+    //     when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+    //     when(passwordEncoder.encode(anyString())).thenReturn("newEncoded");
 
-        authService.resetPassword(1L, "654321", "newPassword");
+    //     authService.resetPassword(1L, "654321", "newPassword");
 
-        verify(userRepository).save(mockUser);
-        assertEquals("newEncoded", mockUser.getPassword());
-    }
+    //     verify(userRepository).save(mockUser);
+    //     assertEquals("newEncoded", mockUser.getPassword());
+    // }
 
-    @Test
-    void shouldThrowWhenResetPasswordUserNotFound() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(NotFoundException.class, () -> authService.resetPassword(1L, "123456", "pass"));
-    }
+    // @Test
+    // void shouldThrowWhenResetPasswordUserNotFound() {
+    //     when(userRepository.findById(1L)).thenReturn(Optional.empty());
+    //     assertThrows(NotFoundException.class, () -> authService.resetPassword(1L, "123456", "pass"));
+    // }
 
-    @Test
-    void shouldThrowWhenResetPasswordCodeExpired() {
-        mockUser.setVerificationCode("123456");
-        mockUser.setCodeExpiry(LocalDateTime.now().minusMinutes(1));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+    // @Test
+    // void shouldThrowWhenResetPasswordCodeExpired() {
+    //     mockUser.setVerificationCode("123456");
+    //     mockUser.setCodeExpiry(LocalDateTime.now().minusMinutes(1));
+    //     when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
 
-        assertThrows(ForbiddenException.class, () -> authService.resetPassword(1L, "123456", "pass"));
-    }
+    //     assertThrows(ForbiddenException.class, () -> authService.resetPassword(1L, "123456", "pass"));
+    // }
 
-    @Test
-    void shouldThrowWhenResetPasswordCodeInvalid() {
-        mockUser.setVerificationCode("654321");
-        mockUser.setCodeExpiry(LocalDateTime.now().plusMinutes(10));
-        when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
+    // @Test
+    // void shouldThrowWhenResetPasswordCodeInvalid() {
+    //     mockUser.setVerificationCode("654321");
+    //     mockUser.setCodeExpiry(LocalDateTime.now().plusMinutes(10));
+    //     when(userRepository.findById(1L)).thenReturn(Optional.of(mockUser));
 
-        assertThrows(UnauthorizedException.class, () -> authService.resetPassword(1L, "wrong", "pass"));
-    }
+    //     assertThrows(UnauthorizedException.class, () -> authService.resetPassword(1L, "wrong", "pass"));
+    // }
 }

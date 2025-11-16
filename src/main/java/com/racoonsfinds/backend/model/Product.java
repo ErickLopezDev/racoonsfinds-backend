@@ -56,12 +56,4 @@ public class Product {
     @Version
     private Long version;
 
-    // @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<Cart> cart;
-
-    // @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<PurchaseDetail> purchaseDetails;
-
-    // @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<Wishlist> wishlist;
 }

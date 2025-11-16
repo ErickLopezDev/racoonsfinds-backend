@@ -20,8 +20,8 @@ public class SalesController {
 
   private final PurchaseService purchaseService;
 
-  @GetMapping("/")
+  @GetMapping
   public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getSalesByUser() {
-        return purchaseService.getMySales();
-    }
+      return purchaseService.getMySales();
+  }
 }

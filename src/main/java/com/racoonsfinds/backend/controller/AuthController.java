@@ -39,10 +39,10 @@ public class AuthController {
         AuthResponseDto response = authService.login(dto);
         
         if (response.getStatus() == UserStatus.AUTH_SUCCESS) {
-        return ResponseUtil.ok("Login exitoso", response);
-    } else {
-        return ResponseUtil.unauthorized("Credenciales inválidas", response);
-    }
+            return ResponseUtil.ok("Login exitoso", response);
+        } else {
+            return ResponseUtil.unauthorized("Credenciales inválidas", response);
+        }
     }
 
     @PostMapping("/verify")
@@ -63,8 +63,8 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<ApiResponse<Void>> resetPassword(@RequestBody ResetPasswordDto dto) {
-        authService.resetPassword(dto.getUserId(), dto.getCode(), dto.getNewPassword());
-        return ResponseUtil.ok("Contraseña actualizada correctamente.");
+    public ResponseEntity<ApiResponse<AuthResponseDto>> resetPassword(@RequestBody ResetPasswordDto dto) {
+        AuthResponseDto passwordUpdatedAuth = authService.resetPassword(dto.getCode(), dto.getNewPassword());
+        return ResponseUtil.ok("Cuenta verificada correctamente", passwordUpdatedAuth);
     }
 }

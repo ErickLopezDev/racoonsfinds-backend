@@ -185,7 +185,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         return ResponseUtil.ok("Listado de ventas", response);
     }
-
+    
     // === PRIVATE MAPPER ===
     private PurchaseResponseDto mapToDto(Purchase purchase) {
         PurchaseResponseDto dto = new PurchaseResponseDto();
