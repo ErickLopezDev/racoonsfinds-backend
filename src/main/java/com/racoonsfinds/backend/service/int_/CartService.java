@@ -4,11 +4,12 @@ import java.util.List;
 
 import com.racoonsfinds.backend.dto.cart.CartRequestDto;
 import com.racoonsfinds.backend.dto.cart.CartResponseDto;
+import com.racoonsfinds.backend.dto.cart.UpdateCartQuantityDto;
 
 public interface CartService {
     CartResponseDto addToCart(CartRequestDto dto);
     void removeFromCart(Long productId);
     List<CartResponseDto> getUserCart();
     void clearCart();
-    // void UpdateQuantity(Long productId, int quantity);
+    CartResponseDto updateQuantity(Long productId, UpdateCartQuantityDto request);
 }

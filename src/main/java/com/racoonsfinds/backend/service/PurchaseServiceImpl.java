@@ -4,7 +4,10 @@ import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.purchase.PurchaseDetailResponseDto;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
 import com.racoonsfinds.backend.model.*;
-import com.racoonsfinds.backend.repository.*;
+import com.racoonsfinds.backend.repository.CartRepository;
+import com.racoonsfinds.backend.repository.ProductRepository;
+import com.racoonsfinds.backend.repository.PurchaseDetailRepository;
+import com.racoonsfinds.backend.repository.PurchaseRepository;
 import com.racoonsfinds.backend.service.int_.NotificationService;
 import com.racoonsfinds.backend.service.int_.PurchaseService;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
@@ -27,6 +30,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     private final CartRepository cartRepository;
     private final PurchaseRepository purchaseRepository;
     private final PurchaseDetailRepository purchaseDetailRepository;
+    private final ProductRepository productRepository;
     private final NotificationService notificationService;
 
     // Comprar todo el carrito
@@ -38,6 +42,13 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         List<Cart> cartItems = cartRepository.findByUserId(buyerId);
         if (cartItems.isEmpty()) throw new NotFoundException("El carrito está vacío");
+
+        // Check stock for all items
+        for (Cart item : cartItems) {
+            if (item.getAmount() > item.getProduct().getStock()) {
+                throw new IllegalArgumentException("Not enough stock for product " + item.getProduct().getName());
+            }
+        }
 
         // Calcular el total
         BigDecimal total = cartItems.stream()
@@ -65,6 +76,13 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         purchaseDetailRepository.saveAll(details);
         savedPurchase.setPurchaseDetails(details);
+
+        // Update product stock
+        details.forEach(detail -> {
+            Product product = detail.getProduct();
+            product.setStock(product.getStock() - detail.getAmount());
+            productRepository.save(product);
+        });
 
         // ============================================================
         // Crear notificaciones
@@ -112,6 +130,11 @@ public class PurchaseServiceImpl implements PurchaseService {
         if (!cartItem.getUser().getId().equals(buyerId))
             throw new NotFoundException("No puedes comprar un ítem que no es tuyo");
 
+        // Check stock
+        if (cartItem.getAmount() > cartItem.getProduct().getStock()) {
+            throw new IllegalArgumentException("Not enough stock for product " + cartItem.getProduct().getName());
+        }
+
         BigDecimal total = cartItem.getProduct().getPrice()
                 .multiply(BigDecimal.valueOf(cartItem.getAmount()));
 
@@ -131,6 +154,11 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         purchaseDetailRepository.save(detail);
         savedPurchase.setPurchaseDetails(List.of(detail));
+
+        // Update product stock
+        Product product = detail.getProduct();
+        product.setStock(product.getStock() - detail.getAmount());
+        productRepository.save(product);
 
         // ============================================================
         // Crear notificaciones
