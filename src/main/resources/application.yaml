@@ -1,8 +1,4 @@
 spring:
-  security:
-    user:
-      name: prometheus
-      password: prometheus_password
   application:
     name: racoonsfinds-backend
 
@@ -16,27 +12,6 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-
-  # Auth2
-  # security:
-  #   oauth2:
-  #     client:
-  #       registration:
-  #         google:
-  #           client-id: ${GOOGLE_CLIENT_ID}
-  #           client-secret: ${GOOGLE_CLIENT_SECRET}
-  #           scope:
-  #             - openid
-  #             - email
-  #             - profile
-  #           redirect-uri: "{baseUrl}/login/oauth2/code/google"
-  #           authorization-grant-type: authorization_code
-  #       provider:
-  #         google:
-  #           authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
-  #           token-uri: https://oauth2.googleapis.com/token
-  #           user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
-  #           user-name-attribute: sub
 
 security:
   jwt:
@@ -59,14 +34,3 @@ aws:
   s3:
     bucket: ${S3_BUCKET}
 
-management:
-  metrics:
-    tags:
-      application: ${spring.application.name}
-  endpoints:
-    web:
-      exposure:
-        include: health,info,prometheus
-  endpoint:
-    prometheus:
-      enabled: true

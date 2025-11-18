@@ -37,9 +37,9 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
 
     // Configuración de seguridad
-    private final int maxFailedAttempts = 5;
-    private final int lockMinutes = 15;
-    private final int verificationCodeExpiryMinutes = 15;
+    public static final int maxFailedAttempts = 5;
+    public static final int lockMinutes = 15;
+    public static final int verificationCodeExpiryMinutes = 15;
 
     // ==========================================================
     // LOGIN
