@@ -1,0 +1,72 @@
+spring:
+  security:
+    user:
+      name: prometheus
+      password: prometheus_password
+  application:
+    name: racoonsfinds-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_NAME}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # Auth2
+  # security:
+  #   oauth2:
+  #     client:
+  #       registration:
+  #         google:
+  #           client-id: ${GOOGLE_CLIENT_ID}
+  #           client-secret: ${GOOGLE_CLIENT_SECRET}
+  #           scope:
+  #             - openid
+  #             - email
+  #             - profile
+  #           redirect-uri: "{baseUrl}/login/oauth2/code/google"
+  #           authorization-grant-type: authorization_code
+  #       provider:
+  #         google:
+  #           authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+  #           token-uri: https://oauth2.googleapis.com/token
+  #           user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+  #           user-name-attribute: sub
+
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 3600000
+    refresh-expiration: 10080
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+
+resend:
+  api-key: ${RESEND_API_KEY}
+  from: ${RESEND_FROM}
+
+aws:
+  access-key-id: ${AWS_ACCESS_KEY_ID}
+  secret-access-key: ${AWS_SECRET_ACCESS_KEY}
+  region: ${AWS_REGION}
+  s3:
+    bucket: ${S3_BUCKET}
+
+management:
+  metrics:
+    tags:
+      application: ${spring.application.name}
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true

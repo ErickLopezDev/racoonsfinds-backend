@@ -1,0 +1,45 @@
+name: CI — develop (build + tests)
+
+# Dispara en:
+# - Pull requests cuyo destino sea 'develop' (feature -> develop)
+# - Push directo a 'develop'
+on:
+  pull_request:
+    branches: ["develop"]
+  push:
+    branches: ["develop"]
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up JDK (y cache de Maven)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build & run tests (Maven)
+        run: mvn --batch-mode -DskipTests=false clean verify
+
+      - name: Upload surefire (JUnit) reports as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: "**/target/surefire-reports/**/*.xml"
+
+      - name: Publish test results to GitHub (JUnit)
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: "**/target/surefire-reports/*.xml"
