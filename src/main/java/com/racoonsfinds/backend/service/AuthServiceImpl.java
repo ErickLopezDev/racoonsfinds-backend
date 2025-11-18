@@ -5,7 +5,6 @@ import java.util.Random;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.racoonsfinds.backend.dto.auth.AuthResponseDto;
@@ -35,11 +34,14 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
+    private final UserTransactionService userTransactionService;
 
     // Configuración de seguridad
     public static final int maxFailedAttempts = 5;
     public static final int lockMinutes = 15;
     public static final int verificationCodeExpiryMinutes = 15;
+
+    private Random random = new Random();
 
     // ==========================================================
     // LOGIN
@@ -64,13 +66,13 @@ public class AuthServiceImpl implements AuthService {
                 user.getLastLogin().plusMinutes(lockMinutes).isAfter(LocalDateTime.now())) {
                 return new AuthResponseDto(user.getId(), UserStatus.BLOCKED_TEMP, null, null);
             } else {
-                resetFailedAttempts(user);
+                userTransactionService.resetFailedAttempts(user);
             }
         }
 
         // Contraseña incorrecta
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            incrementFailedAttempts(user);
+            userTransactionService.incrementFailedAttempts(user);
             int remaining = Math.max(0, maxFailedAttempts - (user.getFailedAttempts() + 1));
             if (remaining == 0) {
                 // Se alcanzó el máximo de intentos → bloqueo temporal
@@ -86,7 +88,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Login exitoso
-        resetFailedAttempts(user);
+        userTransactionService.resetFailedAttempts(user);
         String access = jwtUtil.generateToken(String.valueOf(user.getId()));
         RefreshToken refresh = refreshTokenService.createRefreshToken(user);
 
@@ -189,29 +191,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // ==========================================================
-    // AUXILIARES
-    // ==========================================================
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void incrementFailedAttempts(User user) {
-        user.setFailedAttempts(user.getFailedAttempts() + 1);
-        user.setLastLogin(LocalDateTime.now());
-        userRepository.save(user);
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void resetFailedAttempts(User user) {
-        user.setFailedAttempts(0);
-        user.setLastLogin(LocalDateTime.now());
-        userRepository.save(user);
-    }
-
-    private String generate6DigitCode() {
-        Random rnd = new Random();
-        int number = rnd.nextInt(900_000) + 100_000;
-        return String.valueOf(number);
-    }
-
-    // ==========================================================
     // RECUPERAR / RESETEAR CONTRASEÑA
     // ==========================================================
     @Transactional
@@ -262,5 +241,11 @@ public class AuthServiceImpl implements AuthService {
         RefreshToken refresh = refreshTokenService.createRefreshToken(user);
 
         return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, access, refresh.getToken());
+    }
+
+    // AUXILIAR
+    private String generate6DigitCode() {
+        int number = this.random.nextInt(900_000) + 100_000;
+        return String.valueOf(number);
     }
 }
