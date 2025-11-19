@@ -97,69 +97,6 @@ public class PurchaseServiceImpl implements PurchaseService {
         return ResponseUtil.created("Compra realizada con éxito", responseDto);
     }
 
-    /**
-     * Compra individual de un ítem del carrito con notificación dual (vendedor y comprador).
-     */
-    @Override
-    @Transactional
-    public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseOne(Long cartId, String description) {
-        Long buyerId = AuthUtil.getAuthenticatedUserId();
-        if (buyerId == null) throw new NotFoundException("Usuario no autenticado");
-
-        Cart cartItem = cartRepository.findById(cartId)
-                .orElseThrow(() -> new NotFoundException("Ítem de carrito no encontrado"));
-
-        if (!cartItem.getUser().getId().equals(buyerId))
-            throw new NotFoundException("No puedes comprar un ítem que no es tuyo");
-
-        BigDecimal total = cartItem.getProduct().getPrice()
-                .multiply(BigDecimal.valueOf(cartItem.getAmount()));
-
-        Purchase purchase = new Purchase();
-        purchase.setDate(LocalDate.now());
-        purchase.setMonto(total);
-        purchase.setDescription(description != null ? description : "Compra de un producto");
-        purchase.setUser(new User() {{ setId(buyerId); }});
-
-        Purchase savedPurchase = purchaseRepository.save(purchase);
-
-        PurchaseDetail detail = new PurchaseDetail();
-        detail.setPurchase(savedPurchase);
-        detail.setProduct(cartItem.getProduct());
-        detail.setMonto(cartItem.getProduct().getPrice());
-        detail.setAmount(cartItem.getAmount());
-
-        purchaseDetailRepository.save(detail);
-        savedPurchase.setPurchaseDetails(List.of(detail));
-
-        // ============================================================
-        // Crear notificaciones
-        // ============================================================
-
-        // Notificación al comprador
-        notificationService.createNotification(
-                buyerId,
-                "Compra individual realizada",
-                "Has comprado el producto '" + cartItem.getProduct().getName() + "'."
-        );
-
-        // Notificación al vendedor
-        Long sellerId = cartItem.getProduct().getUser().getId();
-        if (!sellerId.equals(buyerId)) {
-            notificationService.createNotification(
-                    sellerId,
-                    "Producto vendido",
-                    "Tu producto '" + cartItem.getProduct().getName() +
-                    "' fue comprado por un usuario."
-            );
-        }
-
-        cartRepository.delete(cartItem);
-
-        PurchaseResponseDto responseDto = mapToDto(savedPurchase);
-        return ResponseUtil.created("Compra individual realizada con éxito", responseDto);
-    }
-
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMyPurchases() {
         Long userId = AuthUtil.getAuthenticatedUserId();

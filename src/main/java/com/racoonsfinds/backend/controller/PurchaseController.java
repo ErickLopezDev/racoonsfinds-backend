@@ -32,14 +32,6 @@ public class PurchaseController {
         return purchaseService.purchaseFromCart(description);
     }
 
-    @PostMapping("/one/{cartId}")
-    public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseOne(
-            @PathVariable Long cartId,
-            @RequestParam(required = false) String description
-    ) {
-        return purchaseService.purchaseOne(cartId, description);
-    }
-
     @GetMapping
     public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMyPurchases() {
         return purchaseService.getMyPurchases();
