@@ -41,7 +41,7 @@ public class AuthServiceImpl implements AuthService {
     public static final int lockMinutes = 15;
     public static final int verificationCodeExpiryMinutes = 15;
 
-    private Random random = new Random();
+    private final Random random = new Random();
 
     // ==========================================================
     // LOGIN
