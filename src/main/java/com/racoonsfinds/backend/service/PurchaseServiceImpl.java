@@ -49,6 +49,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         purchase.setDate(LocalDate.now());
         purchase.setMonto(total);
         purchase.setDescription(description != null ? description : "Compra desde carrito");
+        purchase.setPaymentStatus("PENDING");
         purchase.setUser(new User() {{ setId(buyerId); }});
 
         Purchase savedPurchase = purchaseRepository.save(purchase);
@@ -131,6 +132,9 @@ public class PurchaseServiceImpl implements PurchaseService {
         dto.setDate(purchase.getDate());
         dto.setMonto(purchase.getMonto());
         dto.setDescription(purchase.getDescription());
+        dto.setPaymentStatus(purchase.getPaymentStatus());
+        dto.setPaymentMethod(purchase.getPaymentMethod());
+        dto.setTransactionId(purchase.getTransactionId());
 
         // === USER INFO ===
         if (purchase.getUser() != null) {

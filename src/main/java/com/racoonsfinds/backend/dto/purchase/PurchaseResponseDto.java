@@ -19,6 +19,9 @@ public class PurchaseResponseDto {
     private LocalDate date;
     private BigDecimal monto;
     private String description;
+    private String paymentStatus;
+    private String paymentMethod;
+    private String transactionId;
     private Long userId;
     private List<PurchaseDetailResponseDto> details;
 }

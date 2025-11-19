@@ -37,6 +37,15 @@ public class Purchase {
     @Column(name = "description", length = 500)
     private String description;
 
+    @Column(name = "payment_status")
+    private String paymentStatus;
+
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod;
+
+    @Column(name = "transaction_id", length = 100)
+    private String transactionId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "userIdP"))
     private User user;
