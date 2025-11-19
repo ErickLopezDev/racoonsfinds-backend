@@ -5,11 +5,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import com.racoonsfinds.backend.dto.cart.CartItemresponseDto;
 import com.racoonsfinds.backend.dto.cart.CartRequestDto;
 import com.racoonsfinds.backend.dto.cart.CartResponseDto;
-import com.racoonsfinds.backend.dto.cart.UpdateCartQuantityDto;
 import com.racoonsfinds.backend.model.Cart;
 import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
@@ -17,7 +14,6 @@ import com.racoonsfinds.backend.repository.CartRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.CartService;
-import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 
 import lombok.RequiredArgsConstructor;
