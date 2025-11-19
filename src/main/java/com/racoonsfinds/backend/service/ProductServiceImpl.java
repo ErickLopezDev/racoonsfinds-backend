@@ -19,6 +19,7 @@ import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.CategoryRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
+import com.racoonsfinds.backend.repository.ReviewRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.ProductService;
 import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
@@ -36,6 +37,7 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
+    private final ReviewRepository reviewRepository;
 
     @Transactional
     public ProductResponseDto createProduct(MultipartFile file, ProductRequestDto req) throws IOException {
@@ -239,6 +241,12 @@ public class ProductServiceImpl implements ProductService {
             dto.setUserId(p.getUser().getId());
             dto.setUserName(p.getUser().getUsername());
         }
+
+        // Set average rating and review count
+        Double averageRating = reviewRepository.findAverageRatingByProductId(p.getId());
+        Long reviewCount = reviewRepository.countByProductId(p.getId());
+        dto.setAverageRating(averageRating != null ? averageRating : 0.0);
+        dto.setReviewCount(reviewCount != null ? reviewCount : 0L);
 
         return dto;
     }
