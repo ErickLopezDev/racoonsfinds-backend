@@ -50,7 +50,9 @@ public class PurchaseServiceImpl implements PurchaseService {
         purchase.setMonto(total);
         purchase.setDescription(description != null ? description : "Compra desde carrito");
         purchase.setPaymentStatus("PENDING");
-        purchase.setUser(new User() {{ setId(buyerId); }});
+        User buyer = new User();
+        buyer.setId(buyerId);
+        purchase.setUser(buyer);
 
         Purchase savedPurchase = purchaseRepository.save(purchase);
 
