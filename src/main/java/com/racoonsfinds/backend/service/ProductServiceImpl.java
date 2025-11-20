@@ -39,6 +39,8 @@ public class ProductServiceImpl implements ProductService {
     private final S3Service s3Service;
     private final ReviewRepository reviewRepository;
 
+    public static final String PRODUCT_ID_NOT_FOUND = "Product not found with ID ";
+
     @Transactional
     public ProductResponseDto createProduct(MultipartFile file, ProductRequestDto req) throws IOException {
         Product product = MapperUtil.map(req, Product.class);
@@ -177,14 +179,14 @@ public class ProductServiceImpl implements ProductService {
 
     public ProductResponseDto getById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_ID_NOT_FOUND + id));
         return mapToDto(product);
     }
 
     @Transactional
     public ProductResponseDto updateProduct(Long id, MultipartFile file, ProductRequestDto req) throws IOException {
         Product existing = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_ID_NOT_FOUND + id));
 
         // Actualizamos los campos si vienen valores
         if (req.getName() != null) existing.setName(req.getName());
@@ -212,7 +214,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void delete(Long id) {
         Product p = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_ID_NOT_FOUND + id));
 
         // Si ya está eliminado, no hacemos nada
         if (Boolean.TRUE.equals(p.getEliminado())) {
