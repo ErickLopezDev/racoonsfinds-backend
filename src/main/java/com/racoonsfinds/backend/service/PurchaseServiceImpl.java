@@ -8,6 +8,7 @@ import com.racoonsfinds.backend.model.*;
 import com.racoonsfinds.backend.repository.*;
 import com.racoonsfinds.backend.service.int_.NotificationService;
 import com.racoonsfinds.backend.service.int_.PurchaseService;
+import com.racoonsfinds.backend.shared.exception.BadRequestException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.*;
 
@@ -26,6 +27,7 @@ import java.util.List;
 public class PurchaseServiceImpl implements PurchaseService {
 
     private final CartRepository cartRepository;
+    private final ProductRepository productRepository;
     private final PurchaseRepository purchaseRepository;
     private final PurchaseDetailRepository purchaseDetailRepository;
     private final NotificationService notificationService;
@@ -41,6 +43,13 @@ public class PurchaseServiceImpl implements PurchaseService {
         List<Cart> cartItems = cartRepository.findByUserId(buyerId);
         if (cartItems.isEmpty())
             throw new NotFoundException("El carrito está vacío");
+
+        // Validar stock disponible
+        for (Cart item : cartItems) {
+            if (item.getAmount() > item.getProduct().getStock()) {
+                throw new BadRequestException("Stock insuficiente para el producto: " + item.getProduct().getName());
+            }
+        }
 
         // Calcular el total
         BigDecimal total = cartItems.stream()
@@ -74,6 +83,13 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         purchaseDetailRepository.saveAll(details);
         savedPurchase.setPurchaseDetails(details);
+
+        // Actualizar stock de productos
+        details.forEach(detail -> {
+            Product product = detail.getProduct();
+            product.setStock(product.getStock() - detail.getAmount());
+            productRepository.save(product);
+        });
 
         // ============================================================
         // Crear notificaciones
