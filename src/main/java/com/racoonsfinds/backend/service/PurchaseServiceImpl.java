@@ -2,6 +2,7 @@ package com.racoonsfinds.backend.service;
 
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.purchase.PurchaseDetailResponseDto;
+import com.racoonsfinds.backend.dto.purchase.PurchaseRequestDto;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
 import com.racoonsfinds.backend.model.*;
 import com.racoonsfinds.backend.repository.*;
@@ -32,12 +33,14 @@ public class PurchaseServiceImpl implements PurchaseService {
     // Comprar todo el carrito
     @Override
     @Transactional
-    public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseFromCart(String description) {
+    public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseFromCart(PurchaseRequestDto req) {
         Long buyerId = AuthUtil.getAuthenticatedUserId();
-        if (buyerId == null) throw new NotFoundException("Usuario no autenticado");
+        if (buyerId == null)
+            throw new NotFoundException("Usuario no autenticado");
 
         List<Cart> cartItems = cartRepository.findByUserId(buyerId);
-        if (cartItems.isEmpty()) throw new NotFoundException("El carrito está vacío");
+        if (cartItems.isEmpty())
+            throw new NotFoundException("El carrito está vacío");
 
         // Calcular el total
         BigDecimal total = cartItems.stream()
@@ -48,7 +51,10 @@ public class PurchaseServiceImpl implements PurchaseService {
         Purchase purchase = new Purchase();
         purchase.setDate(LocalDate.now());
         purchase.setMonto(total);
-        purchase.setDescription(description != null ? description : "Compra desde carrito");
+        purchase.setDireccion(req.getDireccion());
+        purchase.setDistrito(req.getDistrito());
+        purchase.setProvincia(req.getProvincia());
+        purchase.setReferencia(req.getReferencia());
         purchase.setPaymentStatus("PENDING");
         User buyer = new User();
         buyer.setId(buyerId);
@@ -77,8 +83,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         notificationService.createNotification(
                 buyerId,
                 "Compra realizada",
-                "Tu compra #" + savedPurchase.getId() + " fue procesada con éxito."
-        );
+                "Tu compra #" + savedPurchase.getId() + " fue procesada con éxito.");
 
         // Notificación al vendedor de cada producto comprado
         details.forEach(detail -> {
@@ -88,8 +93,7 @@ public class PurchaseServiceImpl implements PurchaseService {
                         sellerId,
                         "Producto vendido",
                         "Tu producto '" + detail.getProduct().getName() +
-                        "' ha sido vendido en la compra #" + savedPurchase.getId() + "."
-                );
+                                "' ha sido vendido en la compra #" + savedPurchase.getId() + ".");
             }
         });
 
@@ -103,7 +107,8 @@ public class PurchaseServiceImpl implements PurchaseService {
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMyPurchases() {
         Long userId = AuthUtil.getAuthenticatedUserId();
-        if (userId == null) throw new NotFoundException("Usuario no autenticado");
+        if (userId == null)
+            throw new NotFoundException("Usuario no autenticado");
 
         List<Purchase> purchases = purchaseRepository.findByUserId(userId);
         List<PurchaseResponseDto> response = purchases.stream()
@@ -116,7 +121,8 @@ public class PurchaseServiceImpl implements PurchaseService {
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMySales() {
         Long sellerId = AuthUtil.getAuthenticatedUserId();
-        if (sellerId == null) throw new NotFoundException("Usuario no autenticado");
+        if (sellerId == null)
+            throw new NotFoundException("Usuario no autenticado");
 
         List<Purchase> purchases = purchaseRepository.findSalesBySellerId(sellerId);
         List<PurchaseResponseDto> response = purchases.stream()
@@ -125,7 +131,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         return ResponseUtil.ok("Listado de ventas", response);
     }
-    
+
     // === PRIVATE MAPPER ===
     private PurchaseResponseDto mapToDto(Purchase purchase) {
         PurchaseResponseDto dto = new PurchaseResponseDto();
@@ -133,7 +139,10 @@ public class PurchaseServiceImpl implements PurchaseService {
         dto.setId(purchase.getId());
         dto.setDate(purchase.getDate());
         dto.setMonto(purchase.getMonto());
-        dto.setDescription(purchase.getDescription());
+        dto.setDistrito(purchase.getDistrito());
+        dto.setReferencia(purchase.getReferencia());
+        dto.setProvincia(purchase.getProvincia());
+        dto.setDireccion(purchase.getDireccion());
         dto.setPaymentStatus(purchase.getPaymentStatus());
         dto.setPaymentMethod(purchase.getPaymentMethod());
         dto.setTransactionId(purchase.getTransactionId());

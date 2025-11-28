@@ -33,9 +33,18 @@ public class Purchase {
 
     @Column(name = "monto", precision = 14, scale = 2)
     private BigDecimal monto;
+    
+    @Column(name = "direccion", length = 500)
+    private String direccion;
 
-    @Column(name = "description", length = 500)
-    private String description;
+    @Column(name = "distrito", length = 500)
+    private String distrito;
+
+    @Column(name = "provincia", length = 500)
+    private String provincia;
+
+    @Column(name = "referencia", length = 500)
+    private String referencia;
 
     @Column(name = "payment_status")
     private String paymentStatus;
