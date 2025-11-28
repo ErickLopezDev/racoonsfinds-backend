@@ -11,11 +11,9 @@ import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
 import jakarta.transaction.Transactional;
 
-import com.racoonsfinds.backend.dto.user.UserDto;
 import com.racoonsfinds.backend.dto.user.UserResponseDto;
 
 import lombok.RequiredArgsConstructor;
