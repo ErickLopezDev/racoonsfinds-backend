@@ -31,7 +31,7 @@ public class UserController {
 
   @GetMapping("/{id}")
   public ResponseEntity<ApiResponse<UserResponseDto>> getUserInfo(@PathVariable Long id){
-    return ResponseUtil.ok("User infor retrivied correctly", userService.getUserInfo(id));
+    return ResponseUtil.ok("Información de usuario obtenido correctamente", userService.getUserInfo(id));
   }
 
   @PutMapping(value = "", consumes = {"multipart/form-data"})
