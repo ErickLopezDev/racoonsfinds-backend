@@ -28,8 +28,8 @@ public class PurchaseController {
 
     @PostMapping("/from-cart")
     public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseFromCart(
-            @RequestBody PurchaseRequestDto req) {
-        return purchaseService.purchaseFromCart(req);
+            @RequestBody PurchaseRequestDto value) {
+        return purchaseService.purchaseFromCart(value);
     }
 
     @GetMapping
