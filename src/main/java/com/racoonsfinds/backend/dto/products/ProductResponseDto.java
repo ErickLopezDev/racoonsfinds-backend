@@ -25,6 +25,7 @@ public class ProductResponseDto {
     private String categoryName;
     private Long userId;
     private String userName;
+    private String userImage;
     private Double averageRating;
     private Long reviewCount;
 }

@@ -36,7 +36,8 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional
     public ResponseEntity<ApiResponse<ReviewResponseDto>> createReview(ReviewRequestDto request) {
         Long userId = AuthUtil.getAuthenticatedUserId();
-        if (userId == null) throw new NotFoundException("Usuario no autenticado");
+        if (userId == null)
+            throw new NotFoundException("Usuario no autenticado");
 
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
@@ -69,6 +70,8 @@ public class ReviewServiceImpl implements ReviewService {
     public ResponseEntity<ApiResponse<List<ReviewResponseDto>>> getReviewsByProduct(Long productId) {
         List<Review> reviews = reviewRepository.findByProductId(productId);
         List<ReviewResponseDto> response = reviews.stream()
+                .sorted((r1, r2) -> r2.getDate().compareTo(r1.getDate())) 
+                .limit(10)
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
         return ResponseUtil.ok("Reseñas obtenidas", response);
@@ -78,7 +81,8 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<Double>> getAverageRating(Long productId) {
         Double average = reviewRepository.findAverageRatingByProductId(productId);
-        if (average == null) average = 0.0;
+        if (average == null)
+            average = 0.0;
         return ResponseUtil.ok("Promedio de calificación", average);
     }
 

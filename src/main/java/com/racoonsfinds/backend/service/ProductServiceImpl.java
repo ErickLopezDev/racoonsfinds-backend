@@ -242,6 +242,7 @@ public class ProductServiceImpl implements ProductService {
         if (p.getUser() != null) {
             dto.setUserId(p.getUser().getId());
             dto.setUserName(p.getUser().getUsername());
+            dto.setUserImage(p.getUser().getImageUrl());
         }
 
         // Set average rating and review count
