@@ -40,6 +40,15 @@ public class Purchase {
     @Column(name = "distrito", length = 500)
     private String distrito;
 
+    @Column(name = "region", length = 500)
+    private String region;
+
+    @Column(name = "contactName", length = 300)
+    private String contactName;
+    
+    @Column(name = "phoneContact", length = 15)
+    private String phoneContact;
+
     @Column(name = "provincia", length = 500)
     private String provincia;
 

@@ -18,4 +18,6 @@ public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
         WHERE prod.user.id = :sellerId
         """)
     List<Purchase> findSalesBySellerId(@Param("sellerId") Long sellerId);
+
+    boolean existsByUserIdAndPurchaseDetails_ProductId(Long userId, Long productId);
 }

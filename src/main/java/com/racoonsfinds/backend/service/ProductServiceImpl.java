@@ -19,12 +19,13 @@ import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.CategoryRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
+import com.racoonsfinds.backend.repository.PurchaseRepository;
 import com.racoonsfinds.backend.repository.ReviewRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.ProductService;
 import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.MapperUtil; 
+import com.racoonsfinds.backend.shared.utils.MapperUtil;
 import org.springframework.data.domain.Pageable;
 
 import lombok.AllArgsConstructor;
@@ -35,6 +36,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
+    private final PurchaseRepository purchaseRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
     private final ReviewRepository reviewRepository;
@@ -60,7 +62,8 @@ public class ProductServiceImpl implements ProductService {
         // === Categoría ===
         if (req.getCategoryId() != null) {
             Category category = categoryRepository.findById(req.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
             product.setCategory(category);
         }
 
@@ -80,8 +83,7 @@ public class ProductServiceImpl implements ProductService {
             Long categoryId,
             String search,
             String sortBy,
-            String sortDir
-    ) {
+            String sortDir) {
         Long userId = AuthUtil.getAuthenticatedUserId();
         if (userId == null) {
             throw new ResourceNotFoundException("Usuario no autenticado");
@@ -114,15 +116,20 @@ public class ProductServiceImpl implements ProductService {
                 .map(this::mapToDto)
                 .toList();
 
+        dtoList.forEach(dto -> {
+            // Verificar si el usuario puede comentar (ha comprado el producto)
+            boolean hasPurchased = purchaseRepository.existsByUserIdAndPurchaseDetails_ProductId(userId, dto.getId());
+            dto.setCanComment(hasPurchased);
+
+        });
+
         return new PagedResponse<>(
                 dtoList,
                 products.getNumber(),
                 products.getTotalPages(),
                 products.getTotalElements(),
-                products.getSize()
-        );
+                products.getSize());
     }
-
 
     public PagedResponse<ProductResponseDto> findAllPaged(
             int page,
@@ -130,8 +137,7 @@ public class ProductServiceImpl implements ProductService {
             Long categoryId,
             String search,
             String sortBy,
-            String sortDir
-    ) {
+            String sortDir) {
         // Seguridad: limitar tamaño máximo
         size = Math.min(size, 50);
         page = Math.max(page, 0);
@@ -147,15 +153,14 @@ public class ProductServiceImpl implements ProductService {
 
         // Filtro combinado flexible
         if (categoryId != null && searchTerm != null && !searchTerm.isEmpty()) {
-            products = productRepository.findByCategoryIdAndNameContainingIgnoreCaseOrCategoryIdAndDescriptionContainingIgnoreCase(
-                    categoryId, searchTerm, categoryId, searchTerm, pageable
-            );
+            products = productRepository
+                    .findByCategoryIdAndNameContainingIgnoreCaseOrCategoryIdAndDescriptionContainingIgnoreCase(
+                            categoryId, searchTerm, categoryId, searchTerm, pageable);
         } else if (categoryId != null) {
             products = productRepository.findByCategoryId(categoryId, pageable);
         } else if (searchTerm != null && !searchTerm.isEmpty()) {
             products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-                    searchTerm, searchTerm, pageable
-            );
+                    searchTerm, searchTerm, pageable);
         } else {
             products = productRepository.findAll(pageable);
         }
@@ -172,10 +177,8 @@ public class ProductServiceImpl implements ProductService {
                 products.getNumber(),
                 products.getTotalPages(),
                 products.getTotalElements(),
-                products.getSize()
-        );
+                products.getSize());
     }
-
 
     public ProductResponseDto getById(Long id) {
         Product product = productRepository.findById(id)
@@ -189,15 +192,20 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_ID_NOT_FOUND + id));
 
         // Actualizamos los campos si vienen valores
-        if (req.getName() != null) existing.setName(req.getName());
-        if (req.getStock() != null) existing.setStock(req.getStock());
-        if (req.getPrice() != null) existing.setPrice(req.getPrice());
-        if (req.getDescription() != null) existing.setDescription(req.getDescription());
+        if (req.getName() != null)
+            existing.setName(req.getName());
+        if (req.getStock() != null)
+            existing.setStock(req.getStock());
+        if (req.getPrice() != null)
+            existing.setPrice(req.getPrice());
+        if (req.getDescription() != null)
+            existing.setDescription(req.getDescription());
 
         // Actualizar categoría si se envía
         if (req.getCategoryId() != null) {
             Category cat = categoryRepository.findById(req.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
             existing.setCategory(cat);
         }
 
@@ -225,7 +233,6 @@ public class ProductServiceImpl implements ProductService {
         p.setEliminado(true);
         productRepository.save(p);
     }
-
 
     // === PRIVATE MAPPER ===
     private ProductResponseDto mapToDto(Product p) {

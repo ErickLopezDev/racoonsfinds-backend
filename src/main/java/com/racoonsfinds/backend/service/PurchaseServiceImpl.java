@@ -60,10 +60,13 @@ public class PurchaseServiceImpl implements PurchaseService {
         Purchase purchase = new Purchase();
         purchase.setDate(LocalDate.now());
         purchase.setMonto(total);
-        purchase.setDireccion(req.getDireccion());
-        purchase.setDistrito(req.getDistrito());
-        purchase.setProvincia(req.getProvincia());
-        purchase.setReferencia(req.getReferencia());
+        purchase.setDireccion(req.getAddress());
+        purchase.setRegion(req.getRegion());
+        purchase.setPhoneContact(req.getPhoneNumber());
+        purchase.setContactName(req.getContactName());
+        purchase.setDistrito(req.getDistrict());
+        purchase.setProvincia(req.getProvince());
+        purchase.setReferencia(req.getReference());
         purchase.setPaymentStatus("PENDING");
         User buyer = new User();
         buyer.setId(buyerId);
@@ -148,6 +151,18 @@ public class PurchaseServiceImpl implements PurchaseService {
         return ResponseUtil.ok("Listado de ventas", response);
     }
 
+    public boolean existsByUserIdAndPurchaseDetails_ProductId(Long userId, Long productId) {
+
+        Purchase purchase = purchaseRepository.findByUserId(userId).stream()
+                .filter(p -> p.getPurchaseDetails().stream()
+                        .anyMatch(detail -> detail.getProduct().getId().equals(productId)))
+                .findFirst()
+                .orElse(null);
+
+        return purchase != null;
+
+    }
+
     // === PRIVATE MAPPER ===
     private PurchaseResponseDto mapToDto(Purchase purchase) {
         PurchaseResponseDto dto = new PurchaseResponseDto();
@@ -171,19 +186,19 @@ public class PurchaseServiceImpl implements PurchaseService {
         // === DETAILS ===
         if (purchase.getPurchaseDetails() != null && !purchase.getPurchaseDetails().isEmpty()) {
             List<PurchaseDetailResponseDto> detailDtos = purchase.getPurchaseDetails().stream()
-                .map(detail -> {
-                    PurchaseDetailResponseDto d = new PurchaseDetailResponseDto();
-                    d.setId(detail.getId());
-                    d.setAmount(detail.getAmount());
-                    d.setMonto(detail.getMonto());
+                    .map(detail -> {
+                        PurchaseDetailResponseDto d = new PurchaseDetailResponseDto();
+                        d.setId(detail.getId());
+                        d.setAmount(detail.getAmount());
+                        d.setMonto(detail.getMonto());
 
-                    if (detail.getProduct() != null) {
-                        d.setProductId(detail.getProduct().getId());
-                        d.setProductName(detail.getProduct().getName());
-                    }
-                    return d;
-                })
-                .toList();
+                        if (detail.getProduct() != null) {
+                            d.setProductId(detail.getProduct().getId());
+                            d.setProductName(detail.getProduct().getName());
+                        }
+                        return d;
+                    })
+                    .toList();
 
             dto.setDetails(detailDtos);
         }

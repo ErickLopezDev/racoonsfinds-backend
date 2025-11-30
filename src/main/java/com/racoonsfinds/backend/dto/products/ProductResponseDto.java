@@ -28,4 +28,5 @@ public class ProductResponseDto {
     private String userImage;
     private Double averageRating;
     private Long reviewCount;
+    private Boolean canComment;
 }
