@@ -1,6 +1,7 @@
 package com.racoonsfinds.backend.service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Random;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -200,17 +201,27 @@ public class AuthServiceImpl implements AuthService {
 
         User user = optUser.get();
 
-        String code = generate6DigitCode();
-        user.setVerificationCode(code);
-        user.setCodeExpiry(LocalDateTime.now().plusMinutes(verificationCodeExpiryMinutes));
+        // Security check
+        if (user.getCodeExpiry() != null && user.getCodeExpiry().isAfter(LocalDateTime.now().minusMinutes(5))) {
+            throw new BadRequestException("Ya se ha enviado una solicitud reciente. Espera antes de intentar nuevamente.");
+        }
+
+        String token = jwtUtil.generateToken(String.valueOf(user.getId()));
+
+        user.setCodeExpiry(LocalDateTime.now());
         userRepository.save(user);
+
+        String url1 = "https://racoonsfinds.shop/auth/change-password?token=" + token;
+        String url2 = "http://localhost:4200/auth/change-password?token=" + token;
 
         String subject = "Recuperación de contraseña";
         String body = String.format("""
             <p>Recibimos una solicitud para restablecer tu contraseña.</p>
-            <p>Tu código de verificación es: <b>%s</b> (válido por %d minutos).</p>
+            <p>Haz clic en uno de los siguientes enlaces para cambiar tu contraseña:</p>
+            <p><a href="%s">Cambiar contraseña (Producción)</a></p>
+            <p><a href="%s">Cambiar contraseña (Desarrollo)</a></p>
             <p>Si no realizaste esta solicitud, puedes ignorar este mensaje.</p>
-        """, code, verificationCodeExpiryMinutes);
+        """, url1, url2);
 
         emailService.sendPasswordResetEmail(user.getEmail(), subject, body);
     }
@@ -237,6 +248,25 @@ public class AuthServiceImpl implements AuthService {
         user.setCodeExpiry(null);
         userRepository.save(user);
         
+        String access = jwtUtil.generateToken(String.valueOf(user.getId()));
+        RefreshToken refresh = refreshTokenService.createRefreshToken(user);
+
+        return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, access, refresh.getToken());
+    }
+
+    @Transactional
+    public AuthResponseDto changePassword(String token, String newPassword) {
+        if (!jwtUtil.validateToken(token) || jwtUtil.isTokenExpired(token)) {
+            throw new UnauthorizedException("Token inválido o expirado.");
+        }
+
+        Long userId = Long.parseLong(jwtUtil.getSubject(token));
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException("Usuario no encontrado."));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
         String access = jwtUtil.generateToken(String.valueOf(user.getId()));
         RefreshToken refresh = refreshTokenService.createRefreshToken(user);
 

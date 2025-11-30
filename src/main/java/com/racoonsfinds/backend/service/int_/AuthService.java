@@ -13,4 +13,5 @@ public interface AuthService {
   void resendVerification(RequestResendDto dto);
   void forgotPassword(String email);
   AuthResponseDto resetPassword(String code, String newPassword);
+  AuthResponseDto changePassword(String token, String newPassword);
 }
