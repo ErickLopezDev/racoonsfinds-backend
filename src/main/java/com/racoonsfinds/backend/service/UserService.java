@@ -24,6 +24,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final S3Service s3Service;
 
+    public UserResponseDto getMe(){
+        Long sessionUserId = AuthUtil.getAuthenticatedUserId();
+        if (sessionUserId == null) return null;
+        User user = userRepository.findById(sessionUserId).orElse(null);
+        return mapToDto(user);
+    }
+
     public UserResponseDto getUserInfo(Long id){
 
         User userFounded = userRepository.findById(id).orElse(null);

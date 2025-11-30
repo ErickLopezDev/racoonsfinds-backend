@@ -28,6 +28,10 @@ public class UserController {
   
   private final UserService userService;
 
+  @GetMapping("/id")
+  public ResponseEntity<ApiResponse<UserResponseDto>> getMe(){
+    return ResponseUtil.ok("Información personal del usuario obtenida correctamente", userService.getMe());
+  }
 
   @GetMapping("/{id}")
   public ResponseEntity<ApiResponse<UserResponseDto>> getUserInfo(@PathVariable Long id){
