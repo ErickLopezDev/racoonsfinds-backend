@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -49,6 +50,12 @@ public class UserController {
       return ResponseEntity.ok(new ApiResponse<>(
               "Usuario actualizado correctamente", true, updated
       ));
+  }
+
+  @DeleteMapping()
+  public ResponseEntity<ApiResponse<Void>> cancelUserAccount(){
+    userService.cancelUserAccount();
+    return ResponseUtil.ok("Cuenta de usuario eliminada exitosamente");
   }
 
 }

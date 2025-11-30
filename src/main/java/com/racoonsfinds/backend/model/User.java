@@ -50,6 +50,8 @@ public class User {
 
   private LocalDateTime lastLogin;
 
+  private Boolean isAccountCanceled = false;
+
   @Temporal(TemporalType.TIMESTAMP)
   private LocalDateTime createdAt = LocalDateTime.now();  
 

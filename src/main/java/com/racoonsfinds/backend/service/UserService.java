@@ -24,20 +24,23 @@ public class UserService {
     private final UserRepository userRepository;
     private final S3Service s3Service;
 
-    public UserResponseDto getMe(){
+    public UserResponseDto getMe() {
         Long sessionUserId = AuthUtil.getAuthenticatedUserId();
-        if (sessionUserId == null) return null;
-        User user = userRepository.findById(sessionUserId).orElse(null);
+        if (sessionUserId == null) {
+            throw new AccessDeniedException("No authenticated user"); 
+        }
+        User user = userRepository.findById(sessionUserId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with ID " + sessionUserId));
         return mapToDto(user);
     }
 
-    public UserResponseDto getUserInfo(Long id){
-
-        User userFounded = userRepository.findById(id).orElse(null);
-
-        if (userFounded == null) return null;
-
-        return mapToDto(userFounded);
+    public UserResponseDto getUserInfo(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User not found with ID " + id
+                ));
+        return mapToDto(user);
     }
 
 
@@ -71,6 +74,23 @@ public class UserService {
 
         return mapToDto(saved);
     }
+
+    @Transactional
+    public void cancelUserAccount() {
+
+        Long sessionUserId = AuthUtil.getAuthenticatedUserId();
+        User sessionUser = userRepository.findById(sessionUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID " + sessionUserId));
+
+        if (sessionUser.getIsAccountCanceled()) {
+            throw new RuntimeException("User account has already been canceled");
+        }
+
+        sessionUser.setIsAccountCanceled(true);
+        userRepository.save(sessionUser);
+    }
+
+
     private UserResponseDto mapToDto(User user) {
         if (user == null) return null;
 
