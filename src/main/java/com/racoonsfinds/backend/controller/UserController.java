@@ -28,7 +28,7 @@ public class UserController {
   
   private final UserService userService;
 
-  @GetMapping("/id")
+  @GetMapping("/me")
   public ResponseEntity<ApiResponse<UserResponseDto>> getMe(){
     return ResponseUtil.ok("Información personal del usuario obtenida correctamente", userService.getMe());
   }
