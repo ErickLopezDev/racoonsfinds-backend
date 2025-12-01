@@ -19,7 +19,6 @@ import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.CategoryRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
-import com.racoonsfinds.backend.repository.PurchaseRepository;
 import com.racoonsfinds.backend.repository.ReviewRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.ProductService;
@@ -36,7 +35,6 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
-    private final PurchaseRepository purchaseRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
     private final ReviewRepository reviewRepository;
@@ -115,13 +113,6 @@ public class ProductServiceImpl implements ProductService {
                 .stream()
                 .map(this::mapToDto)
                 .toList();
-
-        dtoList.forEach(dto -> {
-            // Verificar si el usuario puede comentar (ha comprado el producto)
-            boolean hasPurchased = purchaseRepository.existsByUserIdAndPurchaseDetails_ProductId(userId, dto.getId());
-            dto.setCanComment(hasPurchased);
-
-        });
 
         return new PagedResponse<>(
                 dtoList,

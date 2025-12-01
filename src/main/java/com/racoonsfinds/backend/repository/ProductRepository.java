@@ -14,11 +14,11 @@ public interface ProductRepository extends JpaRepository<Product, Long>{
 
         @Query("""
         SELECT p FROM Product p
-        WHERE p.user.id = :userId
+        WHERE p.user.id = :userId AND p.eliminado = false
         AND (:categoryId IS NULL OR p.category.id = :categoryId)
-        AND (
-        LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%'))
-        OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))
+        AND (:search IS NULL OR :search = '' OR
+            LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%'))
+            OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))
         )
         """)
         Page<Product> searchProductsByUserAndText(
