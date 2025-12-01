@@ -15,4 +15,5 @@ public class CartResponseDto {
     private String productImage;
     private BigDecimal productPrice;
     private Integer amount;
+    private Integer stock;
 }

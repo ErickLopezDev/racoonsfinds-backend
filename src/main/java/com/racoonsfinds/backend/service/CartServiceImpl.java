@@ -70,7 +70,8 @@ public class CartServiceImpl implements CartService {
     public List<CartResponseDto> getUserCart() {
         Long userId = AuthUtil.getAuthenticatedUserId();
         List<Cart> carts = cartRepository.findByUserId(userId);
-         return carts.stream()
+
+        return carts.stream()
                 .map(this::buildResponseDto)
                 .collect(Collectors.toList());
     }
@@ -94,6 +95,7 @@ public class CartServiceImpl implements CartService {
         dto.setProductImage(product != null ? s3Service.getFileUrl(product.getImage()) : null);
         dto.setProductPrice(product != null ? product.getPrice() : null);
         dto.setAmount(cart.getAmount());
+        dto.setStock(product != null ? product.getStock() : null);
         return dto;
     }
 }
