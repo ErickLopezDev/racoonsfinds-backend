@@ -159,6 +159,7 @@ public class ProductServiceImpl implements ProductService {
         // Mapear resultados
         List<ProductResponseDto> dtoList = products
                 .stream()
+                .filter(p -> !p.getEliminado())
                 .map(this::mapToDto)
                 .toList();
 
