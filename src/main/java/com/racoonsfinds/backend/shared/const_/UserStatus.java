@@ -50,6 +50,9 @@ public final class UserStatus {
     /** No hay un código pendiente de verificación (no fue solicitado). */
     public static final int CODE_NOT_REQUESTED = 8;
 
+    /** La cuenta del usuario ha sido cancelada */
+    public static final int ACCOUNT_CANCELED = 9;
+
 
     // =====================
     // Constructor privado

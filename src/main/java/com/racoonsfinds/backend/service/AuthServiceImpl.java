@@ -60,6 +60,10 @@ public class AuthServiceImpl implements AuthService {
 
         User user = optUser.get();
 
+        if (user.getIsAccountCanceled()){
+            return new AuthResponseDto(null, UserStatus.ACCOUNT_CANCELED, null, null);
+        }
+
         // Usuario bloqueado temporalmente
         if (user.getFailedAttempts() >= maxFailedAttempts) {
             if (user.getLastLogin() != null &&
