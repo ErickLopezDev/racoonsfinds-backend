@@ -13,15 +13,17 @@ public interface ProductRepository extends JpaRepository<Product, Long>{
         Page<Product> findByUserIdAndCategoryId(Long userId, Long categoryId, Pageable pageable);
 
         @Query("""
-        SELECT p FROM Product p
-        WHERE p.user.id = :userId AND p.eliminado = false
-        AND (:categoryId IS NULL OR p.category.id = :categoryId)
-        AND (:search IS NULL OR :search = '' OR
+    SELECT p FROM Product p
+    WHERE p.user.id = :userId 
+    AND p.eliminado = false
+    AND (:categoryId IS NULL OR p.category.id = :categoryId)
+    AND (:search IS NULL OR :search = '' OR
             LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%'))
             OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))
-        )
-        """)
-        Page<Product> searchProductsByUserAndText(
+    )
+    """)
+    Page<Product> searchProductsByUserAndText(
+
         @Param("userId") Long userId,
         @Param("categoryId") Long categoryId,
         @Param("search") String search,
