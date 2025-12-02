@@ -130,27 +130,18 @@ public class ProductServiceImpl implements ProductService {
             String sortBy,
             String sortDir) {
 
-        size = Math.min(size, 50);
+        // límites y defaults
+        size = Math.min(Math.max(size, 1), 50);
         page = Math.max(page, 0);
+        String effectiveSortBy = (sortBy == null || sortBy.isBlank()) ? "createdDate" : sortBy;
+        String effectiveSortDir = (sortDir == null || sortDir.isBlank()) ? "DESC" : sortDir;
 
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        Sort sort = Sort.by(Sort.Direction.fromString(effectiveSortDir), effectiveSortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        Long userId = AuthUtil.getAuthenticatedUserId();
-        if (userId == null) {
-            throw new ResourceNotFoundException("Usuario no autenticado");
-        }
+        String searchTerm = (search == null || search.trim().isEmpty()) ? null : search.trim();
 
-        String searchTerm = (search == null || search.trim().isEmpty())
-                ? null
-                : search.trim();
-
-        Page<Product> products = productRepository.searchProductsByUserAndText(
-                userId,
-                categoryId,
-                searchTerm,
-                pageable
-        );
+        Page<Product> products = productRepository.searchPublicProducts(categoryId, searchTerm, pageable);
 
         List<ProductResponseDto> dtoList = products
                 .stream()
