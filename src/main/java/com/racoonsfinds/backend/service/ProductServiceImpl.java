@@ -19,11 +19,12 @@ import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.CategoryRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
+import com.racoonsfinds.backend.repository.ReviewRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.ProductService;
 import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.MapperUtil; 
+import com.racoonsfinds.backend.shared.utils.MapperUtil;
 import org.springframework.data.domain.Pageable;
 
 import lombok.AllArgsConstructor;
@@ -36,6 +37,9 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final S3Service s3Service;
+    private final ReviewRepository reviewRepository;
+
+    public static final String PRODUCT_ID_NOT_FOUND = "Product not found with ID ";
 
     @Transactional
     public ProductResponseDto createProduct(MultipartFile file, ProductRequestDto req) throws IOException {
@@ -56,7 +60,8 @@ public class ProductServiceImpl implements ProductService {
         // === Categoría ===
         if (req.getCategoryId() != null) {
             Category category = categoryRepository.findById(req.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
             product.setCategory(category);
         }
 
@@ -76,8 +81,7 @@ public class ProductServiceImpl implements ProductService {
             Long categoryId,
             String search,
             String sortBy,
-            String sortDir
-    ) {
+            String sortDir) {
         Long userId = AuthUtil.getAuthenticatedUserId();
         if (userId == null) {
             throw new ResourceNotFoundException("Usuario no autenticado");
@@ -115,10 +119,8 @@ public class ProductServiceImpl implements ProductService {
                 products.getNumber(),
                 products.getTotalPages(),
                 products.getTotalElements(),
-                products.getSize()
-        );
+                products.getSize());
     }
-
 
     public PagedResponse<ProductResponseDto> findAllPaged(
             int page,
@@ -126,43 +128,26 @@ public class ProductServiceImpl implements ProductService {
             Long categoryId,
             String search,
             String sortBy,
-            String sortDir
-    ) {
-        // Seguridad: limitar tamaño máximo
-        size = Math.min(size, 50);
-        page = Math.max(page, 0);
+            String sortDir) {
 
-        // Configurar orden dinámico
-        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+        // límites y defaults
+        size = Math.min(Math.max(size, 1), 50);
+        page = Math.max(page, 0);
+        String effectiveSortBy = (sortBy == null || sortBy.isBlank()) ? "createdDate" : sortBy;
+        String effectiveSortDir = (sortDir == null || sortDir.isBlank()) ? "DESC" : sortDir;
+
+        Sort sort = Sort.by(Sort.Direction.fromString(effectiveSortDir), effectiveSortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
 
-        // Sanitizar búsqueda
-        String searchTerm = (search != null) ? search.trim() : null;
+        String searchTerm = (search == null || search.trim().isEmpty()) ? null : search.trim();
 
-        Page<Product> products;
+        Page<Product> products = productRepository.searchPublicProducts(categoryId, searchTerm, pageable);
 
-        // Filtro combinado flexible
-        if (categoryId != null && searchTerm != null && !searchTerm.isEmpty()) {
-            products = productRepository.findByCategoryIdAndNameContainingIgnoreCaseOrCategoryIdAndDescriptionContainingIgnoreCase(
-                    categoryId, searchTerm, categoryId, searchTerm, pageable
-            );
-        } else if (categoryId != null) {
-            products = productRepository.findByCategoryId(categoryId, pageable);
-        } else if (searchTerm != null && !searchTerm.isEmpty()) {
-            products = productRepository.findByNameContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
-                    searchTerm, searchTerm, pageable
-            );
-        } else {
-            products = productRepository.findAll(pageable);
-        }
-
-        // Mapear resultados
         List<ProductResponseDto> dtoList = products
                 .stream()
                 .map(this::mapToDto)
                 .toList();
 
-        // Estructura de respuesta
         return new PagedResponse<>(
                 dtoList,
                 products.getNumber(),
@@ -173,27 +158,33 @@ public class ProductServiceImpl implements ProductService {
     }
 
 
+
     public ProductResponseDto getById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_ID_NOT_FOUND + id));
         return mapToDto(product);
     }
 
     @Transactional
     public ProductResponseDto updateProduct(Long id, MultipartFile file, ProductRequestDto req) throws IOException {
         Product existing = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_ID_NOT_FOUND + id));
 
         // Actualizamos los campos si vienen valores
-        if (req.getName() != null) existing.setName(req.getName());
-        if (req.getStock() != null) existing.setStock(req.getStock());
-        if (req.getPrice() != null) existing.setPrice(req.getPrice());
-        if (req.getDescription() != null) existing.setDescription(req.getDescription());
+        if (req.getName() != null)
+            existing.setName(req.getName());
+        if (req.getStock() != null)
+            existing.setStock(req.getStock());
+        if (req.getPrice() != null)
+            existing.setPrice(req.getPrice());
+        if (req.getDescription() != null)
+            existing.setDescription(req.getDescription());
 
         // Actualizar categoría si se envía
         if (req.getCategoryId() != null) {
             Category cat = categoryRepository.findById(req.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
             existing.setCategory(cat);
         }
 
@@ -210,7 +201,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void delete(Long id) {
         Product p = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID " + id));
+                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_ID_NOT_FOUND + id));
 
         // Si ya está eliminado, no hacemos nada
         if (Boolean.TRUE.equals(p.getEliminado())) {
@@ -221,7 +212,6 @@ public class ProductServiceImpl implements ProductService {
         p.setEliminado(true);
         productRepository.save(p);
     }
-
 
     // === PRIVATE MAPPER ===
     private ProductResponseDto mapToDto(Product p) {
@@ -238,7 +228,14 @@ public class ProductServiceImpl implements ProductService {
         if (p.getUser() != null) {
             dto.setUserId(p.getUser().getId());
             dto.setUserName(p.getUser().getUsername());
+            dto.setUserImage(p.getUser().getImageUrl());
         }
+
+        // Set average rating and review count
+        Double averageRating = reviewRepository.findAverageRatingByProductId(p.getId());
+        Long reviewCount = reviewRepository.countByProductId(p.getId());
+        dto.setAverageRating(averageRating != null ? averageRating : 0.0);
+        dto.setReviewCount(reviewCount != null ? reviewCount : 0L);
 
         return dto;
     }

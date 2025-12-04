@@ -18,7 +18,13 @@ public class PurchaseResponseDto {
     private Long id;
     private LocalDate date;
     private BigDecimal monto;
-    private String description;
+    private String direccion;
+    private String distrito;
+    private String provincia;
+    private String referencia;
+    private String paymentStatus;
+    private String paymentMethod;
+    private String transactionId;
     private Long userId;
     private List<PurchaseDetailResponseDto> details;
 }

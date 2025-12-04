@@ -6,9 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class ResetPasswordDto {
-    @NotBlank
-    private String code;
+public class ChangePasswordDto {
     @NotBlank
     private String newPassword;
 }

@@ -4,16 +4,17 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.racoonsfinds.backend.dto.ApiResponse;
+import com.racoonsfinds.backend.dto.purchase.PurchaseRequestDto;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
 import com.racoonsfinds.backend.service.PurchaseServiceImpl;
 import com.racoonsfinds.backend.service.int_.PurchaseService;
+
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 @RestController
 @RequestMapping("/api/purchases")
@@ -27,22 +28,13 @@ public class PurchaseController {
 
     @PostMapping("/from-cart")
     public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseFromCart(
-            @RequestParam(required = false) String description
-    ) {
-        return purchaseService.purchaseFromCart(description);
-    }
-
-    @PostMapping("/one/{cartId}")
-    public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseOne(
-            @PathVariable Long cartId,
-            @RequestParam(required = false) String description
-    ) {
-        return purchaseService.purchaseOne(cartId, description);
+            @RequestBody PurchaseRequestDto value) {
+        return purchaseService.purchaseFromCart(value);
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMyPurchases() {
         return purchaseService.getMyPurchases();
     }
-    
+
 }

@@ -5,7 +5,9 @@ import java.time.LocalDate;
 
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -14,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.racoonsfinds.backend.dto.ApiResponse;
-import com.racoonsfinds.backend.dto.user.UserDto;
 import com.racoonsfinds.backend.dto.user.UserResponseDto;
 import com.racoonsfinds.backend.service.UserService;
 import com.racoonsfinds.backend.shared.utils.ResponseUtil;
@@ -29,8 +30,13 @@ public class UserController {
   private final UserService userService;
 
   @GetMapping("/me")
-  public ResponseEntity<ApiResponse<UserDto>> getCurrentUser() {
-    return ResponseUtil.ok("Usuario obtenido correctamente", userService.getCurrentUser()); 
+  public ResponseEntity<ApiResponse<UserResponseDto>> getMe(){
+    return ResponseUtil.ok("Información personal del usuario obtenida correctamente", userService.getMe());
+  }
+
+  @GetMapping("/{id}")
+  public ResponseEntity<ApiResponse<UserResponseDto>> getUserInfo(@PathVariable Long id){
+    return ResponseUtil.ok("Información de usuario obtenido correctamente", userService.getUserInfo(id));
   }
 
   @PutMapping(value = "", consumes = {"multipart/form-data"})
@@ -44,6 +50,12 @@ public class UserController {
       return ResponseEntity.ok(new ApiResponse<>(
               "Usuario actualizado correctamente", true, updated
       ));
+  }
+
+  @DeleteMapping()
+  public ResponseEntity<ApiResponse<Void>> cancelUserAccount(){
+    userService.cancelUserAccount();
+    return ResponseUtil.ok("Cuenta de usuario eliminada exitosamente");
   }
 
 }

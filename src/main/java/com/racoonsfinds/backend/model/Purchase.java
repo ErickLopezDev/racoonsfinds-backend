@@ -33,9 +33,36 @@ public class Purchase {
 
     @Column(name = "monto", precision = 14, scale = 2)
     private BigDecimal monto;
+    
+    @Column(name = "direccion", length = 500)
+    private String direccion;
 
-    @Column(name = "description", length = 500)
-    private String description;
+    @Column(name = "distrito", length = 500)
+    private String distrito;
+
+    @Column(name = "region", length = 500)
+    private String region;
+
+    @Column(name = "contactName", length = 300)
+    private String contactName;
+    
+    @Column(name = "phoneContact", length = 15)
+    private String phoneContact;
+
+    @Column(name = "provincia", length = 500)
+    private String provincia;
+
+    @Column(name = "referencia", length = 500)
+    private String referencia;
+
+    @Column(name = "payment_status")
+    private String paymentStatus;
+
+    @Column(name = "payment_method", length = 50)
+    private String paymentMethod;
+
+    @Column(name = "transaction_id", length = 100)
+    private String transactionId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "userIdP"))

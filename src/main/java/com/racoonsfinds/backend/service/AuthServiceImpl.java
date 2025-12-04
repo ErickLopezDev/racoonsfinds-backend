@@ -5,7 +5,6 @@ import java.util.Random;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.racoonsfinds.backend.dto.auth.AuthResponseDto;
@@ -35,11 +34,14 @@ public class AuthServiceImpl implements AuthService {
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
+    private final UserTransactionService userTransactionService;
 
     // Configuración de seguridad
-    private final int maxFailedAttempts = 5;
-    private final int lockMinutes = 15;
-    private final int verificationCodeExpiryMinutes = 15;
+    public static final int maxFailedAttempts = 5;
+    public static final int lockMinutes = 15;
+    public static final int verificationCodeExpiryMinutes = 15;
+
+    private final Random random = new Random();
 
     // ==========================================================
     // LOGIN
@@ -58,19 +60,23 @@ public class AuthServiceImpl implements AuthService {
 
         User user = optUser.get();
 
+        if (user.getIsAccountCanceled()){
+            return new AuthResponseDto(null, UserStatus.ACCOUNT_CANCELED, null, null);
+        }
+
         // Usuario bloqueado temporalmente
         if (user.getFailedAttempts() >= maxFailedAttempts) {
             if (user.getLastLogin() != null &&
                 user.getLastLogin().plusMinutes(lockMinutes).isAfter(LocalDateTime.now())) {
                 return new AuthResponseDto(user.getId(), UserStatus.BLOCKED_TEMP, null, null);
             } else {
-                resetFailedAttempts(user);
+                userTransactionService.resetFailedAttempts(user);
             }
         }
 
         // Contraseña incorrecta
         if (!passwordEncoder.matches(dto.getPassword(), user.getPassword())) {
-            incrementFailedAttempts(user);
+            userTransactionService.incrementFailedAttempts(user);
             int remaining = Math.max(0, maxFailedAttempts - (user.getFailedAttempts() + 1));
             if (remaining == 0) {
                 // Se alcanzó el máximo de intentos → bloqueo temporal
@@ -86,7 +92,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Login exitoso
-        resetFailedAttempts(user);
+        userTransactionService.resetFailedAttempts(user);
         String access = jwtUtil.generateToken(String.valueOf(user.getId()));
         RefreshToken refresh = refreshTokenService.createRefreshToken(user);
 
@@ -189,29 +195,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     // ==========================================================
-    // AUXILIARES
-    // ==========================================================
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void incrementFailedAttempts(User user) {
-        user.setFailedAttempts(user.getFailedAttempts() + 1);
-        user.setLastLogin(LocalDateTime.now());
-        userRepository.save(user);
-    }
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void resetFailedAttempts(User user) {
-        user.setFailedAttempts(0);
-        user.setLastLogin(LocalDateTime.now());
-        userRepository.save(user);
-    }
-
-    private String generate6DigitCode() {
-        Random rnd = new Random();
-        int number = rnd.nextInt(900_000) + 100_000;
-        return String.valueOf(number);
-    }
-
-    // ==========================================================
     // RECUPERAR / RESETEAR CONTRASEÑA
     // ==========================================================
     @Transactional
@@ -221,17 +204,27 @@ public class AuthServiceImpl implements AuthService {
 
         User user = optUser.get();
 
-        String code = generate6DigitCode();
-        user.setVerificationCode(code);
-        user.setCodeExpiry(LocalDateTime.now().plusMinutes(verificationCodeExpiryMinutes));
+        // Security check
+        if (user.getCodeExpiry() != null && user.getCodeExpiry().isAfter(LocalDateTime.now().minusMinutes(5))) {
+            throw new BadRequestException("Ya se ha enviado una solicitud reciente. Espera antes de intentar nuevamente.");
+        }
+
+        String token = jwtUtil.generateToken(String.valueOf(user.getId()));
+
+        user.setCodeExpiry(LocalDateTime.now());
         userRepository.save(user);
+
+        String url1 = "https://racoonsfinds.shop/auth/change-password?token=" + token;
+        String url2 = "http://localhost:4200/auth/change-password?token=" + token;
 
         String subject = "Recuperación de contraseña";
         String body = String.format("""
             <p>Recibimos una solicitud para restablecer tu contraseña.</p>
-            <p>Tu código de verificación es: <b>%s</b> (válido por %d minutos).</p>
+            <p>Haz clic en uno de los siguientes enlaces para cambiar tu contraseña:</p>
+            <p><a href="%s">Cambiar contraseña (Producción)</a></p>
+            <p><a href="%s">Cambiar contraseña (Desarrollo)</a></p>
             <p>Si no realizaste esta solicitud, puedes ignorar este mensaje.</p>
-        """, code, verificationCodeExpiryMinutes);
+        """, url1, url2);
 
         emailService.sendPasswordResetEmail(user.getEmail(), subject, body);
     }
@@ -262,5 +255,30 @@ public class AuthServiceImpl implements AuthService {
         RefreshToken refresh = refreshTokenService.createRefreshToken(user);
 
         return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, access, refresh.getToken());
+    }
+
+    @Transactional
+    public AuthResponseDto changePassword(String token, String newPassword) {
+        if (!jwtUtil.validateToken(token) || jwtUtil.isTokenExpired(token)) {
+            throw new UnauthorizedException("Token inválido o expirado.");
+        }
+
+        Long userId = Long.parseLong(jwtUtil.getSubject(token));
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new NotFoundException("Usuario no encontrado."));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        String access = jwtUtil.generateToken(String.valueOf(user.getId()));
+        RefreshToken refresh = refreshTokenService.createRefreshToken(user);
+
+        return new AuthResponseDto(user.getId(), UserStatus.AUTH_SUCCESS, access, refresh.getToken());
+    }
+
+    // AUXILIAR
+    private String generate6DigitCode() {
+        int number = this.random.nextInt(900_000) + 100_000;
+        return String.valueOf(number);
     }
 }

@@ -2,13 +2,16 @@ package com.racoonsfinds.backend.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.auth.AuthResponseDto;
 import com.racoonsfinds.backend.dto.auth.login.LoginRequestDto;
+import com.racoonsfinds.backend.dto.auth.password.ChangePasswordDto;
 import com.racoonsfinds.backend.dto.auth.password.ForgotPasswordDto;
 import com.racoonsfinds.backend.dto.auth.password.ResetPasswordDto;
 import com.racoonsfinds.backend.dto.auth.register.RegisterRequestDto;
@@ -59,12 +62,18 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse<Void>> forgotPassword(@RequestBody ForgotPasswordDto dto) {
         authService.forgotPassword(dto.getEmail());
-        return ResponseUtil.ok("Se ha enviado un código de recuperación a tu correo electrónico.");
+        return ResponseUtil.ok("Se ha enviado un enlace de recuperación a tu correo electrónico.");
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<ApiResponse<AuthResponseDto>> resetPassword(@RequestBody ResetPasswordDto dto) {
         AuthResponseDto passwordUpdatedAuth = authService.resetPassword(dto.getCode(), dto.getNewPassword());
         return ResponseUtil.ok("Cuenta verificada correctamente", passwordUpdatedAuth);
+    }
+
+    @PutMapping("/change-password")
+    public ResponseEntity<ApiResponse<AuthResponseDto>> changePassword(@RequestParam("token") String token, @Valid @RequestBody ChangePasswordDto dto) {
+        AuthResponseDto passwordUpdatedAuth = authService.changePassword(token, dto.getNewPassword());
+        return ResponseUtil.ok("Contraseña cambiada correctamente", passwordUpdatedAuth);
     }
 }

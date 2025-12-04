@@ -20,7 +20,7 @@ import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/cart")
+@RequestMapping("/api/cart/")
 @RequiredArgsConstructor
 public class CartController {
 

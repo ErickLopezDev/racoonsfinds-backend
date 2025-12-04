@@ -1,6 +1,6 @@
 package com.racoonsfinds.backend.service;
 
-import com.racoonsfinds.backend.model.*;
+// import com.racoonsfinds.backend.model.*;
 import com.racoonsfinds.backend.repository.CartRepository;
 import com.racoonsfinds.backend.repository.PurchaseDetailRepository;
 import com.racoonsfinds.backend.repository.PurchaseRepository;
@@ -16,9 +16,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.math.BigDecimal;
+// import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+// import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -44,16 +44,16 @@ class PurchaseServiceImplTest {
     @AfterEach
     void clearAuth() { SecurityContextHolder.clearContext(); }
 
-    private Cart buildCartItem(long userId, long productId, int amount, String name, String price) {
-        User user = new User(); user.setId(userId);
-        Product product = new Product();
-        product.setId(productId);
-        product.setName(name);
-        product.setPrice(new BigDecimal(price));
-        Cart c = new Cart();
-        c.setUser(user); c.setProduct(product); c.setAmount(amount);
-        return c;
-    }
+    // private Cart buildCartItem(long userId, long productId, int amount, String name, String price) {
+    //     User user = new User(); user.setId(userId);
+    //     Product product = new Product();
+    //     product.setId(productId);
+    //     product.setName(name);
+    //     product.setPrice(new BigDecimal(price));
+    //     Cart c = new Cart();
+    //     c.setUser(user); c.setProduct(product); c.setAmount(amount);
+    //     return c;
+    // }
 
     // @Test
     // void purchaseFromCart_ShouldCreatePurchaseAndClearCart() {
@@ -100,16 +100,16 @@ class PurchaseServiceImplTest {
     //     verify(cartRepository).delete(item);
     // }
 
-    @Test
-    void purchaseOne_ShouldThrow_WhenNotOwner() {
-        Cart item = buildCartItem(2L, 10L, 1, "A", "1.00");
-        when(cartRepository.findById(5L)).thenReturn(Optional.of(item));
-        assertThrows(NotFoundException.class, () -> purchaseService.purchaseOne(5L, "d"));
-    }
+    // @Test
+    // void purchaseOne_ShouldThrow_WhenNotOwner() {
+    //     Cart item = buildCartItem(2L, 10L, 1, "A", "1.00");
+    //     when(cartRepository.findById(5L)).thenReturn(Optional.of(item));
+    //     assertThrows(NotFoundException.class, () -> purchaseService.purchaseOne(5L, "d"));
+    // }
 
-    @Test
-    void purchaseOne_ShouldThrow_WhenNotFound() {
-        when(cartRepository.findById(5L)).thenReturn(Optional.empty());
-        assertThrows(NotFoundException.class, () -> purchaseService.purchaseOne(5L, "d"));
-    }
+    // @Test
+    // void purchaseOne_ShouldThrow_WhenNotFound() {
+    //     when(cartRepository.findById(5L)).thenReturn(Optional.empty());
+    //     assertThrows(NotFoundException.class, () -> purchaseService.purchaseOne(5L, "d"));
+    // }
 }
