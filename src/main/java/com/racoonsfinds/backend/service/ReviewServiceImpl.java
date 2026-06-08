@@ -1,6 +1,5 @@
 package com.racoonsfinds.backend.service;
 
-import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.review.ReviewRequestDto;
 import com.racoonsfinds.backend.dto.review.ReviewResponseDto;
 import com.racoonsfinds.backend.model.Product;
@@ -10,13 +9,12 @@ import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.ReviewRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.ReviewService;
+import com.racoonsfinds.backend.shared.exception.ConflictException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +32,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     @Transactional
-    public ResponseEntity<ApiResponse<ReviewResponseDto>> createReview(ReviewRequestDto request) {
+    public ReviewResponseDto createReview(ReviewRequestDto request) {
         Long userId = AuthUtil.getAuthenticatedUserId();
         if (userId == null) throw new NotFoundException("Usuario no autenticado");
 
@@ -44,11 +42,10 @@ public class ReviewServiceImpl implements ReviewService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
 
-        // Check if user already reviewed this product
         boolean alreadyReviewed = reviewRepository.findByProductId(request.getProductId())
                 .stream().anyMatch(r -> r.getUser().getId().equals(userId));
         if (alreadyReviewed) {
-            throw new NotFoundException("Ya has reseñado este producto");
+            throw new ConflictException("Ya has reseñado este producto");
         }
 
         Review review = new Review();
@@ -58,35 +55,29 @@ public class ReviewServiceImpl implements ReviewService {
         review.setComment(request.getComment());
         review.setDate(LocalDate.now());
 
-        Review savedReview = reviewRepository.save(review);
-
-        ReviewResponseDto response = mapToDto(savedReview);
-        return ResponseUtil.created("Reseña creada exitosamente", response);
+        return mapToDto(reviewRepository.save(review));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<ApiResponse<List<ReviewResponseDto>>> getReviewsByProduct(Long productId) {
-        List<Review> reviews = reviewRepository.findByProductId(productId);
-        List<ReviewResponseDto> response = reviews.stream()
+    public List<ReviewResponseDto> getReviewsByProduct(Long productId) {
+        return reviewRepository.findByProductId(productId)
+                .stream()
                 .map(this::mapToDto)
                 .collect(Collectors.toList());
-        return ResponseUtil.ok("Reseñas obtenidas", response);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<ApiResponse<Double>> getAverageRating(Long productId) {
+    public Double getAverageRating(Long productId) {
         Double average = reviewRepository.findAverageRatingByProductId(productId);
-        if (average == null) average = 0.0;
-        return ResponseUtil.ok("Promedio de calificación", average);
+        return average != null ? average : 0.0;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<ApiResponse<Long>> getReviewCount(Long productId) {
-        Long count = reviewRepository.countByProductId(productId);
-        return ResponseUtil.ok("Número de reseñas", count);
+    public Long getReviewCount(Long productId) {
+        return reviewRepository.countByProductId(productId);
     }
 
     private ReviewResponseDto mapToDto(Review review) {

@@ -4,6 +4,7 @@ import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.payment.PaymentRequestDto;
 import com.racoonsfinds.backend.dto.payment.PaymentResponseDto;
 import com.racoonsfinds.backend.service.int_.PaymentService;
+import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,6 @@ public class PaymentController {
 
     @PostMapping("/process")
     public ResponseEntity<ApiResponse<PaymentResponseDto>> processPayment(@Valid @RequestBody PaymentRequestDto request) {
-        return paymentService.processPayment(request);
+        return ResponseUtil.ok("Pago procesado", paymentService.processPayment(request));
     }
 }

@@ -1,18 +1,18 @@
 package com.racoonsfinds.backend.service;
 
-import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.purchase.PurchaseDetailResponseDto;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
 import com.racoonsfinds.backend.model.*;
 import com.racoonsfinds.backend.repository.*;
 import com.racoonsfinds.backend.service.int_.NotificationService;
 import com.racoonsfinds.backend.service.int_.PurchaseService;
+import com.racoonsfinds.backend.shared.exception.BadRequestException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
-import com.racoonsfinds.backend.shared.utils.*;
+import com.racoonsfinds.backend.shared.exception.UnauthorizedException;
+import com.racoonsfinds.backend.shared.utils.AuthUtil;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,24 +27,22 @@ public class PurchaseServiceImpl implements PurchaseService {
     private final CartRepository cartRepository;
     private final PurchaseRepository purchaseRepository;
     private final PurchaseDetailRepository purchaseDetailRepository;
+    private final ProductRepository productRepository;
     private final NotificationService notificationService;
 
-    // Comprar todo el carrito
     @Override
     @Transactional
-    public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseFromCart(String description) {
+    public PurchaseResponseDto purchaseFromCart(String description) {
         Long buyerId = AuthUtil.getAuthenticatedUserId();
-        if (buyerId == null) throw new NotFoundException("Usuario no autenticado");
+        if (buyerId == null) throw new UnauthorizedException("Usuario no autenticado");
 
         List<Cart> cartItems = cartRepository.findByUserId(buyerId);
-        if (cartItems.isEmpty()) throw new NotFoundException("El carrito está vacío");
+        if (cartItems.isEmpty()) throw new BadRequestException("El carrito está vacío");
 
-        // Calcular el total
         BigDecimal total = cartItems.stream()
                 .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getAmount())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Crear la compra
         Purchase purchase = new Purchase();
         purchase.setDate(LocalDate.now());
         purchase.setMonto(total);
@@ -56,7 +54,6 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         Purchase savedPurchase = purchaseRepository.save(purchase);
 
-        // Crear los detalles
         List<PurchaseDetail> details = cartItems.stream().map(item -> {
             PurchaseDetail d = new PurchaseDetail();
             d.setPurchase(savedPurchase);
@@ -69,21 +66,25 @@ public class PurchaseServiceImpl implements PurchaseService {
         purchaseDetailRepository.saveAll(details);
         savedPurchase.setPurchaseDetails(details);
 
-        // ============================================================
-        // Crear notificaciones
-        // ============================================================
+        // Descontar stock de cada producto comprado
+        details.forEach(detail -> {
+            Product product = detail.getProduct();
+            int newStock = product.getStock() - detail.getAmount();
+            if (newStock < 0) throw new BadRequestException(
+                    "Stock insuficiente para el producto: " + product.getName());
+            product.setStock(newStock);
+            productRepository.save(product);
+        });
 
-        // Notificación al comprador
         notificationService.createNotification(
                 buyerId,
                 "Compra realizada",
                 "Tu compra #" + savedPurchase.getId() + " fue procesada con éxito."
         );
 
-        // Notificación al vendedor de cada producto comprado
         details.forEach(detail -> {
-            Long sellerId = detail.getProduct().getUser().getId(); // obtener el dueño del producto
-            if (!sellerId.equals(buyerId)) { // evitar que un usuario se notifique a sí mismo
+            Long sellerId = detail.getProduct().getUser().getId();
+            if (!sellerId.equals(buyerId)) {
                 notificationService.createNotification(
                         sellerId,
                         "Producto vendido",
@@ -93,43 +94,35 @@ public class PurchaseServiceImpl implements PurchaseService {
             }
         });
 
-        // Limpiar carrito
         cartRepository.deleteByUserId(buyerId);
 
-        PurchaseResponseDto responseDto = mapToDto(savedPurchase);
-        return ResponseUtil.created("Compra realizada con éxito", responseDto);
+        return mapToDto(savedPurchase);
     }
 
+    @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMyPurchases() {
+    public List<PurchaseResponseDto> getMyPurchases() {
         Long userId = AuthUtil.getAuthenticatedUserId();
-        if (userId == null) throw new NotFoundException("Usuario no autenticado");
+        if (userId == null) throw new UnauthorizedException("Usuario no autenticado");
 
-        List<Purchase> purchases = purchaseRepository.findByUserId(userId);
-        List<PurchaseResponseDto> response = purchases.stream()
+        return purchaseRepository.findByUserId(userId).stream()
                 .map(this::mapToDto)
                 .toList();
-
-        return ResponseUtil.ok("Listado de compras", response);
     }
 
+    @Override
     @Transactional(readOnly = true)
-    public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMySales() {
+    public List<PurchaseResponseDto> getMySales() {
         Long sellerId = AuthUtil.getAuthenticatedUserId();
-        if (sellerId == null) throw new NotFoundException("Usuario no autenticado");
+        if (sellerId == null) throw new UnauthorizedException("Usuario no autenticado");
 
-        List<Purchase> purchases = purchaseRepository.findSalesBySellerId(sellerId);
-        List<PurchaseResponseDto> response = purchases.stream()
+        return purchaseRepository.findSalesBySellerId(sellerId).stream()
                 .map(this::mapToDto)
                 .toList();
-
-        return ResponseUtil.ok("Listado de ventas", response);
     }
-    
-    // === PRIVATE MAPPER ===
+
     private PurchaseResponseDto mapToDto(Purchase purchase) {
         PurchaseResponseDto dto = new PurchaseResponseDto();
-
         dto.setId(purchase.getId());
         dto.setDate(purchase.getDate());
         dto.setMonto(purchase.getMonto());
@@ -138,12 +131,10 @@ public class PurchaseServiceImpl implements PurchaseService {
         dto.setPaymentMethod(purchase.getPaymentMethod());
         dto.setTransactionId(purchase.getTransactionId());
 
-        // === USER INFO ===
         if (purchase.getUser() != null) {
             dto.setUserId(purchase.getUser().getId());
         }
 
-        // === DETAILS ===
         if (purchase.getPurchaseDetails() != null && !purchase.getPurchaseDetails().isEmpty()) {
             List<PurchaseDetailResponseDto> detailDtos = purchase.getPurchaseDetails().stream()
                 .map(detail -> {
@@ -151,7 +142,6 @@ public class PurchaseServiceImpl implements PurchaseService {
                     d.setId(detail.getId());
                     d.setAmount(detail.getAmount());
                     d.setMonto(detail.getMonto());
-
                     if (detail.getProduct() != null) {
                         d.setProductId(detail.getProduct().getId());
                         d.setProductName(detail.getProduct().getName());
@@ -159,7 +149,6 @@ public class PurchaseServiceImpl implements PurchaseService {
                     return d;
                 })
                 .toList();
-
             dto.setDetails(detailDtos);
         }
 

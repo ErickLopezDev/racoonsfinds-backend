@@ -1,18 +1,18 @@
 package com.racoonsfinds.backend.service;
 
-import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.payment.PaymentRequestDto;
 import com.racoonsfinds.backend.dto.payment.PaymentResponseDto;
 import com.racoonsfinds.backend.model.Purchase;
 import com.racoonsfinds.backend.repository.PurchaseRepository;
 import com.racoonsfinds.backend.service.int_.PaymentService;
+import com.racoonsfinds.backend.shared.exception.BadRequestException;
+import com.racoonsfinds.backend.shared.exception.ForbiddenException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
+import com.racoonsfinds.backend.shared.exception.UnauthorizedException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,22 +26,21 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public ResponseEntity<ApiResponse<PaymentResponseDto>> processPayment(PaymentRequestDto request) {
+    public PaymentResponseDto processPayment(PaymentRequestDto request) {
         Long userId = AuthUtil.getAuthenticatedUserId();
-        if (userId == null) throw new NotFoundException("Usuario no autenticado");
+        if (userId == null) throw new UnauthorizedException("Usuario no autenticado");
 
         Purchase purchase = purchaseRepository.findById(request.getPurchaseId())
                 .orElseThrow(() -> new NotFoundException("Compra no encontrada"));
 
         if (!purchase.getUser().getId().equals(userId)) {
-            throw new NotFoundException("No autorizado para procesar este pago");
+            throw new ForbiddenException("No autorizado para procesar este pago");
         }
 
         if (!"PENDING".equals(purchase.getPaymentStatus())) {
-            throw new NotFoundException("El pago ya ha sido procesado");
+            throw new BadRequestException("El pago ya ha sido procesado");
         }
 
-        // Simulate payment processing
         boolean paymentSuccess = simulatePayment(request);
 
         String transactionId = UUID.randomUUID().toString();
@@ -57,12 +56,10 @@ public class PaymentServiceImpl implements PaymentService {
         response.setPaymentStatus(status);
         response.setTransactionId(transactionId);
         response.setMessage(paymentSuccess ? "Pago procesado exitosamente" : "Pago fallido");
-
-        return ResponseUtil.ok("Pago procesado", response);
+        return response;
     }
 
     private boolean simulatePayment(PaymentRequestDto request) {
-        // Simple simulation: succeed if card number is not empty and CVV is 3 digits
         return request.getCardNumber() != null && !request.getCardNumber().isEmpty() &&
                request.getCvv() != null && request.getCvv().length() == 3;
     }

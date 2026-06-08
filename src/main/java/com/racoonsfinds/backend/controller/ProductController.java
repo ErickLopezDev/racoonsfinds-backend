@@ -46,16 +46,7 @@ public class ProductController {
             @RequestPart(value = "categoryId", required = false) String categoryId,
             @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
 
-        // Crear el DTO y asignar los valores de las partes
-        ProductRequestDto productRequestDto = ProductRequestDto.builder()
-                .name(name)
-                .stock(stock != null ? Integer.parseInt(stock) : null)
-                .price(price != null ? new BigDecimal(price) : null)
-                .description(description)
-                .categoryId(categoryId != null ? Long.parseLong(categoryId) : null)
-                .build();
-
-        ProductResponseDto dto = productService.createProduct(file, productRequestDto);
+        ProductResponseDto dto = productService.createProduct(file, parseProductParts(name, stock, price, description, categoryId));
         return ResponseUtil.created("Producto creado correctamente", dto);
     }
 
@@ -69,17 +60,18 @@ public class ProductController {
             @RequestPart(value = "categoryId", required = false) String categoryId,
             @RequestPart(value = "file", required = false) MultipartFile file) throws IOException {
 
-        // Crear el DTO como en create()
-        ProductRequestDto productRequestDto = ProductRequestDto.builder()
+        ProductResponseDto dto = productService.updateProduct(id, file, parseProductParts(name, stock, price, description, categoryId));
+        return ResponseUtil.ok("Producto actualizado correctamente", dto);
+    }
+
+    private ProductRequestDto parseProductParts(String name, String stock, String price, String description, String categoryId) {
+        return ProductRequestDto.builder()
                 .name(name)
                 .stock(stock != null ? Integer.parseInt(stock) : null)
                 .price(price != null ? new BigDecimal(price) : null)
                 .description(description)
                 .categoryId(categoryId != null ? Long.parseLong(categoryId) : null)
                 .build();
-
-        ProductResponseDto dto = productService.updateProduct(id, file, productRequestDto);
-        return ResponseUtil.ok("Producto actualizado correctamente", dto);
     }
 
 

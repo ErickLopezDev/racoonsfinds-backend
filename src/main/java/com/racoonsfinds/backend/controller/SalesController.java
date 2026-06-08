@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
 import com.racoonsfinds.backend.service.int_.PurchaseService;
+import com.racoonsfinds.backend.shared.utils.ResponseUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,6 +23,6 @@ public class SalesController {
 
   @GetMapping
   public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getSalesByUser() {
-      return purchaseService.getMySales();
+      return ResponseUtil.ok("Listado de ventas", purchaseService.getMySales());
   }
 }

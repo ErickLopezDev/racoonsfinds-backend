@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.racoonsfinds.backend.dto.cart.CartRequestDto;
 import com.racoonsfinds.backend.dto.cart.CartResponseDto;
-import com.racoonsfinds.backend.shared.exception.BadRequestException;
 import com.racoonsfinds.backend.model.Cart;
 import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
@@ -16,6 +15,8 @@ import com.racoonsfinds.backend.repository.CartRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.CartService;
+import com.racoonsfinds.backend.shared.exception.BadRequestException;
+import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -34,10 +35,10 @@ public class CartServiceImpl implements CartService {
     public CartResponseDto addToCart(CartRequestDto dto) {
         Long userId = AuthUtil.getAuthenticatedUserId();
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
 
         Product product = productRepository.findById(dto.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
 
         Cart cart = cartRepository.findByUserIdAndProductId(userId, dto.getProductId())
                 .orElse(null);
@@ -52,11 +53,10 @@ public class CartServiceImpl implements CartService {
         }
 
         if (cart.getAmount() > product.getStock()) {
-            throw new BadRequestException("Requested quantity exceeds available stock");
+            throw new BadRequestException("La cantidad solicitada supera el stock disponible");
         }
 
         cartRepository.save(cart);
-
         return buildResponseDto(cart);
     }
 
@@ -69,8 +69,8 @@ public class CartServiceImpl implements CartService {
     @Override
     public List<CartResponseDto> getUserCart() {
         Long userId = AuthUtil.getAuthenticatedUserId();
-        List<Cart> carts = cartRepository.findByUserId(userId);
-         return carts.stream()
+        return cartRepository.findByUserId(userId)
+                .stream()
                 .map(this::buildResponseDto)
                 .collect(Collectors.toList());
     }
@@ -78,22 +78,20 @@ public class CartServiceImpl implements CartService {
     @Override
     public void clearCart() {
         Long userId = AuthUtil.getAuthenticatedUserId();
-        List<Cart> items = cartRepository.findByUserId(userId);
-        cartRepository.deleteAll(items);
+        cartRepository.deleteAll(cartRepository.findByUserId(userId));
     }
 
     private CartResponseDto buildResponseDto(Cart cart) {
         Product product = cart.getProduct();
         User user = cart.getUser();
-
-        CartResponseDto dto = new CartResponseDto();
-        dto.setId(cart.getId());
-        dto.setUserId(user != null ? user.getId() : null);
-        dto.setProductId(product != null ? product.getId() : null);
-        dto.setProductName(product != null ? product.getName() : null);
-        dto.setProductImage(product != null ? s3Service.getFileUrl(product.getImage()) : null);
-        dto.setProductPrice(product != null ? product.getPrice() : null);
-        dto.setAmount(cart.getAmount());
-        return dto;
+        return CartResponseDto.builder()
+                .id(cart.getId())
+                .userId(user != null ? user.getId() : null)
+                .productId(product != null ? product.getId() : null)
+                .productName(product != null ? product.getName() : null)
+                .productImage(product != null ? s3Service.getFileUrl(product.getImage()) : null)
+                .productPrice(product != null ? product.getPrice() : null)
+                .amount(cart.getAmount())
+                .build();
     }
 }

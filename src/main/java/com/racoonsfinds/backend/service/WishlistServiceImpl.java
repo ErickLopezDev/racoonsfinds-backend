@@ -15,6 +15,8 @@ import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.repository.WishlistRepository;
 import com.racoonsfinds.backend.service.int_.WishlistService;
+import com.racoonsfinds.backend.shared.exception.ConflictException;
+import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -33,13 +35,13 @@ public class WishlistServiceImpl implements WishlistService {
     public WishlistResponseDto addToWishlist(WishlistRequestDto dto) {
         Long userId = AuthUtil.getAuthenticatedUserId();
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
         Product product = productRepository.findById(dto.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
 
         wishlistRepository.findByUserIdAndProductId(userId, dto.getProductId())
                 .ifPresent(wl -> {
-                    throw new RuntimeException("Product already in wishlist");
+                    throw new ConflictException("El producto ya está en tu wishlist");
                 });
 
         Wishlist wishlist = new Wishlist();
@@ -59,8 +61,8 @@ public class WishlistServiceImpl implements WishlistService {
     @Override
     public List<WishlistResponseDto> getUserWishlist() {
         Long userId = AuthUtil.getAuthenticatedUserId();
-        List<Wishlist> wishlist = wishlistRepository.findByUserId(userId);
-        return wishlist.stream()
+        return wishlistRepository.findByUserId(userId)
+                .stream()
                 .map(this::buildResponseDto)
                 .collect(Collectors.toList());
     }
@@ -68,14 +70,13 @@ public class WishlistServiceImpl implements WishlistService {
     private WishlistResponseDto buildResponseDto(Wishlist wishlist) {
         Product product = wishlist.getProduct();
         User user = wishlist.getUser();
-
-        WishlistResponseDto dto = new WishlistResponseDto();
-        dto.setId(wishlist.getId());
-        dto.setUserId(user != null ? user.getId() : null);
-        dto.setProductId(product != null ? product.getId() : null);
-        dto.setProductName(product != null ? product.getName() : null);
-        dto.setProductImage(product != null ? s3Service.getFileUrl(product.getImage()) : null);
-        dto.setProductPrice(product != null ? product.getPrice() : null);
-        return dto;
+        return WishlistResponseDto.builder()
+                .id(wishlist.getId())
+                .userId(user != null ? user.getId() : null)
+                .productId(product != null ? product.getId() : null)
+                .productName(product != null ? product.getName() : null)
+                .productImage(product != null ? s3Service.getFileUrl(product.getImage()) : null)
+                .productPrice(product != null ? product.getPrice() : null)
+                .build();
     }
 }

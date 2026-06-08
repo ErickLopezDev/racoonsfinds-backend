@@ -11,29 +11,26 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.racoonsfinds.backend.dto.ApiResponse;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
-import com.racoonsfinds.backend.service.PurchaseServiceImpl;
 import com.racoonsfinds.backend.service.int_.PurchaseService;
+import com.racoonsfinds.backend.shared.utils.ResponseUtil;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/purchases")
+@RequiredArgsConstructor
 public class PurchaseController {
 
     private final PurchaseService purchaseService;
 
-    public PurchaseController(PurchaseServiceImpl purchaseService) {
-        this.purchaseService = purchaseService;
-    }
-
     @PostMapping("/from-cart")
     public ResponseEntity<ApiResponse<PurchaseResponseDto>> purchaseFromCart(
-            @RequestParam(required = false) String description
-    ) {
-        return purchaseService.purchaseFromCart(description);
+            @RequestParam(required = false) String description) {
+        return ResponseUtil.created("Compra realizada con éxito", purchaseService.purchaseFromCart(description));
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getMyPurchases() {
-        return purchaseService.getMyPurchases();
+        return ResponseUtil.ok("Listado de compras", purchaseService.getMyPurchases());
     }
-    
 }

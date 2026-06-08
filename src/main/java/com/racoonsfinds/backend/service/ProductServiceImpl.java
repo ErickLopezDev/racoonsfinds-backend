@@ -22,15 +22,15 @@ import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.ReviewRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.ProductService;
-import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
+import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.MapperUtil; 
+import com.racoonsfinds.backend.shared.utils.MapperUtil;
 import org.springframework.data.domain.Pageable;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
@@ -50,17 +50,17 @@ public class ProductServiceImpl implements ProductService {
         // === Usuario autenticado ===
         Long userId = AuthUtil.getAuthenticatedUserId();
         if (userId == null) {
-            throw new ResourceNotFoundException("Authenticated user not found");
+            throw new NotFoundException("Authenticated user not found");
         }
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with ID " + userId));
+                .orElseThrow(() -> new NotFoundException("User not found with ID " + userId));
         product.setUser(user);
 
         // === Categoría ===
         if (req.getCategoryId() != null) {
             Category category = categoryRepository.findById(req.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
+                    .orElseThrow(() -> new NotFoundException("Category not found with ID " + req.getCategoryId()));
             product.setCategory(category);
         }
 
@@ -84,7 +84,7 @@ public class ProductServiceImpl implements ProductService {
     ) {
         Long userId = AuthUtil.getAuthenticatedUserId();
         if (userId == null) {
-            throw new ResourceNotFoundException("Usuario no autenticado");
+            throw new NotFoundException("Usuario no autenticado");
         }
 
         // Seguridad: limitar tamaño máximo
@@ -179,14 +179,14 @@ public class ProductServiceImpl implements ProductService {
 
     public ProductResponseDto getById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_ID_NOT_FOUND + id));
+                .orElseThrow(() -> new NotFoundException(PRODUCT_ID_NOT_FOUND + id));
         return mapToDto(product);
     }
 
     @Transactional
     public ProductResponseDto updateProduct(Long id, MultipartFile file, ProductRequestDto req) throws IOException {
         Product existing = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_ID_NOT_FOUND + id));
+                .orElseThrow(() -> new NotFoundException(PRODUCT_ID_NOT_FOUND + id));
 
         // Actualizamos los campos si vienen valores
         if (req.getName() != null) existing.setName(req.getName());
@@ -197,7 +197,7 @@ public class ProductServiceImpl implements ProductService {
         // Actualizar categoría si se envía
         if (req.getCategoryId() != null) {
             Category cat = categoryRepository.findById(req.getCategoryId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID " + req.getCategoryId()));
+                    .orElseThrow(() -> new NotFoundException("Category not found with ID " + req.getCategoryId()));
             existing.setCategory(cat);
         }
 
@@ -214,7 +214,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void delete(Long id) {
         Product p = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_ID_NOT_FOUND + id));
+                .orElseThrow(() -> new NotFoundException(PRODUCT_ID_NOT_FOUND + id));
 
         // Si ya está eliminado, no hacemos nada
         if (Boolean.TRUE.equals(p.getEliminado())) {

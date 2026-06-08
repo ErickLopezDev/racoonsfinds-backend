@@ -1,7 +1,6 @@
 package com.racoonsfinds.backend.service;
 
 import java.time.LocalDateTime;
-import java.util.Random;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,10 +22,12 @@ import com.racoonsfinds.backend.shared.exception.*;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+
+import java.security.SecureRandom;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
@@ -36,12 +37,11 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final UserTransactionService userTransactionService;
 
-    // Configuración de seguridad
     public static final int maxFailedAttempts = 5;
     public static final int lockMinutes = 15;
     public static final int verificationCodeExpiryMinutes = 15;
 
-    private final Random random = new Random();
+    private final SecureRandom random = new SecureRandom();
 
     // ==========================================================
     // LOGIN
