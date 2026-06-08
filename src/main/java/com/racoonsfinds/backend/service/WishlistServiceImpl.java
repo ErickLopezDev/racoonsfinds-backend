@@ -18,6 +18,7 @@ import com.racoonsfinds.backend.service.int_.WishlistService;
 import com.racoonsfinds.backend.shared.exception.ConflictException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
+import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -49,7 +50,7 @@ public class WishlistServiceImpl implements WishlistService {
         wishlist.setProduct(product);
         wishlistRepository.save(wishlist);
 
-        return buildResponseDto(wishlist);
+        return toDto(wishlist);
     }
 
     @Override
@@ -63,20 +64,14 @@ public class WishlistServiceImpl implements WishlistService {
         Long userId = AuthUtil.getAuthenticatedUserId();
         return wishlistRepository.findByUserId(userId)
                 .stream()
-                .map(this::buildResponseDto)
+                .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
-    private WishlistResponseDto buildResponseDto(Wishlist wishlist) {
-        Product product = wishlist.getProduct();
-        User user = wishlist.getUser();
-        return WishlistResponseDto.builder()
-                .id(wishlist.getId())
-                .userId(user != null ? user.getId() : null)
-                .productId(product != null ? product.getId() : null)
-                .productName(product != null ? product.getName() : null)
-                .productImage(product != null ? s3Service.getFileUrl(product.getImage()) : null)
-                .productPrice(product != null ? product.getPrice() : null)
-                .build();
+    private WishlistResponseDto toDto(Wishlist wishlist) {
+        WishlistResponseDto dto = MapperUtil.map(wishlist, WishlistResponseDto.class);
+        if (wishlist.getProduct() != null)
+            dto.setProductImage(s3Service.getFileUrl(wishlist.getProduct().getImage()));
+        return dto;
     }
 }

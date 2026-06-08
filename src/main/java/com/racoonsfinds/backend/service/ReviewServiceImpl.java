@@ -12,6 +12,7 @@ import com.racoonsfinds.backend.service.int_.ReviewService;
 import com.racoonsfinds.backend.shared.exception.ConflictException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
+import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -55,7 +56,7 @@ public class ReviewServiceImpl implements ReviewService {
         review.setComment(request.getComment());
         review.setDate(LocalDate.now());
 
-        return mapToDto(reviewRepository.save(review));
+        return MapperUtil.map(reviewRepository.save(review), ReviewResponseDto.class);
     }
 
     @Override
@@ -63,7 +64,7 @@ public class ReviewServiceImpl implements ReviewService {
     public List<ReviewResponseDto> getReviewsByProduct(Long productId) {
         return reviewRepository.findByProductId(productId)
                 .stream()
-                .map(this::mapToDto)
+                .map(r -> MapperUtil.map(r, ReviewResponseDto.class))
                 .collect(Collectors.toList());
     }
 
@@ -78,19 +79,5 @@ public class ReviewServiceImpl implements ReviewService {
     @Transactional(readOnly = true)
     public Long getReviewCount(Long productId) {
         return reviewRepository.countByProductId(productId);
-    }
-
-    private ReviewResponseDto mapToDto(Review review) {
-        ReviewResponseDto dto = new ReviewResponseDto();
-        dto.setId(review.getId());
-        dto.setStars(review.getStars());
-        dto.setComment(review.getComment());
-        dto.setDate(review.getDate());
-        dto.setProductId(review.getProduct().getId());
-        if (review.getUser() != null) {
-            dto.setUserId(review.getUser().getId());
-            dto.setUserName(review.getUser().getUsername());
-        }
-        return dto;
     }
 }

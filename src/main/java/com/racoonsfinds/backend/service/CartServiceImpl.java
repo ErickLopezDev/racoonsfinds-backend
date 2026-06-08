@@ -18,6 +18,7 @@ import com.racoonsfinds.backend.service.int_.CartService;
 import com.racoonsfinds.backend.shared.exception.BadRequestException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
+import com.racoonsfinds.backend.shared.utils.MapperUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -57,7 +58,7 @@ public class CartServiceImpl implements CartService {
         }
 
         cartRepository.save(cart);
-        return buildResponseDto(cart);
+        return toDto(cart);
     }
 
     @Override
@@ -71,7 +72,7 @@ public class CartServiceImpl implements CartService {
         Long userId = AuthUtil.getAuthenticatedUserId();
         return cartRepository.findByUserId(userId)
                 .stream()
-                .map(this::buildResponseDto)
+                .map(this::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -81,17 +82,10 @@ public class CartServiceImpl implements CartService {
         cartRepository.deleteAll(cartRepository.findByUserId(userId));
     }
 
-    private CartResponseDto buildResponseDto(Cart cart) {
-        Product product = cart.getProduct();
-        User user = cart.getUser();
-        return CartResponseDto.builder()
-                .id(cart.getId())
-                .userId(user != null ? user.getId() : null)
-                .productId(product != null ? product.getId() : null)
-                .productName(product != null ? product.getName() : null)
-                .productImage(product != null ? s3Service.getFileUrl(product.getImage()) : null)
-                .productPrice(product != null ? product.getPrice() : null)
-                .amount(cart.getAmount())
-                .build();
+    private CartResponseDto toDto(Cart cart) {
+        CartResponseDto dto = MapperUtil.map(cart, CartResponseDto.class);
+        if (cart.getProduct() != null)
+            dto.setProductImage(s3Service.getFileUrl(cart.getProduct().getImage()));
+        return dto;
     }
 }
