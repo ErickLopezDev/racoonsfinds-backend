@@ -6,18 +6,14 @@ import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 
-import com.racoonsfinds.backend.dto.cart.CartResponseDto;
 import com.racoonsfinds.backend.dto.products.ProductRequestDto;
 import com.racoonsfinds.backend.dto.products.ProductResponseDto;
 import com.racoonsfinds.backend.dto.products.ProductUpdateRequest;
 import com.racoonsfinds.backend.dto.review.ReviewResponseDto;
 import com.racoonsfinds.backend.dto.user.UserDto;
-import com.racoonsfinds.backend.dto.wishlist.WishlistResponseDto;
-import com.racoonsfinds.backend.model.Cart;
 import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.Review;
 import com.racoonsfinds.backend.model.User;
-import com.racoonsfinds.backend.model.Wishlist;
 
 public class MapperUtil {
 
@@ -56,17 +52,6 @@ public class MapperUtil {
             m.skip(ProductResponseDto::setImage);
             m.skip(ProductResponseDto::setAverageRating);
             m.skip(ProductResponseDto::setReviewCount);
-        });
-
-        // === CART (Entity → DTO) ===
-        // STANDARD resuelve: product.id→productId, product.name→productName, etc.
-        mapper.typeMap(Cart.class, CartResponseDto.class).addMappings(m -> {
-            m.skip(CartResponseDto::setProductImage); // URL de S3 resuelta en el service
-        });
-
-        // === WISHLIST (Entity → DTO) ===
-        mapper.typeMap(Wishlist.class, WishlistResponseDto.class).addMappings(m -> {
-            m.skip(WishlistResponseDto::setProductImage); // URL de S3 resuelta en el service
         });
 
         // === REVIEW (Entity → DTO) ===

@@ -7,7 +7,6 @@ import com.racoonsfinds.backend.model.Review;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.ReviewRepository;
-import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.ReviewService;
 import com.racoonsfinds.backend.shared.exception.ConflictException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
@@ -29,7 +28,6 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final ProductRepository productRepository;
-    private final UserRepository userRepository;
 
     @Override
     @Transactional
@@ -40,8 +38,9 @@ public class ReviewServiceImpl implements ReviewService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+        // Usuario garantizado por JWT — proxy JPA para la FK sin query adicional
+        User user = new User();
+        user.setId(userId);
 
         boolean alreadyReviewed = reviewRepository.findByProductId(request.getProductId())
                 .stream().anyMatch(r -> r.getUser().getId().equals(userId));

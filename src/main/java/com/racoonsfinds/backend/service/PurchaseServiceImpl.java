@@ -4,10 +4,11 @@ import com.racoonsfinds.backend.dto.purchase.PurchaseDetailResponseDto;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
 import com.racoonsfinds.backend.model.*;
 import com.racoonsfinds.backend.repository.*;
-import com.racoonsfinds.backend.service.int_.NotificationService;
 import com.racoonsfinds.backend.service.int_.PurchaseService;
+import com.racoonsfinds.backend.service.port.NotificationPort;
+import com.racoonsfinds.backend.service.port.ProductCatalogPort;
+import com.racoonsfinds.backend.service.port.ProductSnapshot;
 import com.racoonsfinds.backend.shared.exception.BadRequestException;
-import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.exception.UnauthorizedException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 
@@ -19,6 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -27,8 +30,8 @@ public class PurchaseServiceImpl implements PurchaseService {
     private final CartRepository cartRepository;
     private final PurchaseRepository purchaseRepository;
     private final PurchaseDetailRepository purchaseDetailRepository;
-    private final ProductRepository productRepository;
-    private final NotificationService notificationService;
+    private final ProductCatalogPort productCatalogPort;
+    private final NotificationPort notificationPort;
 
     @Override
     @Transactional
@@ -39,8 +42,14 @@ public class PurchaseServiceImpl implements PurchaseService {
         List<Cart> cartItems = cartRepository.findByUserId(buyerId);
         if (cartItems.isEmpty()) throw new BadRequestException("El carrito está vacío");
 
+        // Carga todos los snapshots en una sola llamada (1 query en monolito, 1 HTTP call en microservicio)
+        List<Long> productIds = cartItems.stream().map(c -> c.getProduct().getId()).toList();
+        Map<Long, ProductSnapshot> snapshots = productCatalogPort.findAllByIds(productIds)
+                .stream().collect(Collectors.toMap(ProductSnapshot::id, s -> s));
+
         BigDecimal total = cartItems.stream()
-                .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getAmount())))
+                .map(c -> snapshots.get(c.getProduct().getId()).price()
+                        .multiply(BigDecimal.valueOf(c.getAmount())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Purchase purchase = new Purchase();
@@ -55,10 +64,13 @@ public class PurchaseServiceImpl implements PurchaseService {
         Purchase savedPurchase = purchaseRepository.save(purchase);
 
         List<PurchaseDetail> details = cartItems.stream().map(item -> {
+            ProductSnapshot snapshot = snapshots.get(item.getProduct().getId());
+            Product productRef = new Product();
+            productRef.setId(snapshot.id());
             PurchaseDetail d = new PurchaseDetail();
             d.setPurchase(savedPurchase);
-            d.setProduct(item.getProduct());
-            d.setMonto(item.getProduct().getPrice());
+            d.setProduct(productRef);
+            d.setMonto(snapshot.price());
             d.setAmount(item.getAmount());
             return d;
         }).toList();
@@ -66,36 +78,24 @@ public class PurchaseServiceImpl implements PurchaseService {
         purchaseDetailRepository.saveAll(details);
         savedPurchase.setPurchaseDetails(details);
 
-        // Descontar stock de cada producto comprado
-        details.forEach(detail -> {
-            Product product = detail.getProduct();
-            int newStock = product.getStock() - detail.getAmount();
-            if (newStock < 0) throw new BadRequestException(
-                    "Stock insuficiente para el producto: " + product.getName());
-            product.setStock(newStock);
-            productRepository.save(product);
-        });
-
-        notificationService.createNotification(
-                buyerId,
-                "Compra realizada",
-                "Tu compra #" + savedPurchase.getId() + " fue procesada con éxito."
+        // Decrementa stock via port (en microservicio: llamada al catalog-service)
+        cartItems.forEach(item ->
+            productCatalogPort.decrementStock(item.getProduct().getId(), item.getAmount())
         );
 
-        details.forEach(detail -> {
-            Long sellerId = detail.getProduct().getUser().getId();
-            if (!sellerId.equals(buyerId)) {
-                notificationService.createNotification(
-                        sellerId,
-                        "Producto vendido",
-                        "Tu producto '" + detail.getProduct().getName() +
-                        "' ha sido vendido en la compra #" + savedPurchase.getId() + "."
-                );
+        // Notifica via port (en microservicio: evento Kafka → notification-service)
+        notificationPort.notifyUser(buyerId, "Compra realizada",
+                "Tu compra #" + savedPurchase.getId() + " fue procesada con éxito.");
+
+        snapshots.values().forEach(snapshot -> {
+            if (snapshot.sellerId() != null && !snapshot.sellerId().equals(buyerId)) {
+                notificationPort.notifyUser(snapshot.sellerId(), "Producto vendido",
+                        "Tu producto '" + snapshot.name() + "' ha sido vendido en la compra #"
+                        + savedPurchase.getId() + ".");
             }
         });
 
         cartRepository.deleteByUserId(buyerId);
-
         return mapToDto(savedPurchase);
     }
 
@@ -104,10 +104,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     public List<PurchaseResponseDto> getMyPurchases() {
         Long userId = AuthUtil.getAuthenticatedUserId();
         if (userId == null) throw new UnauthorizedException("Usuario no autenticado");
-
-        return purchaseRepository.findByUserId(userId).stream()
-                .map(this::mapToDto)
-                .toList();
+        return purchaseRepository.findByUserId(userId).stream().map(this::mapToDto).toList();
     }
 
     @Override
@@ -115,10 +112,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     public List<PurchaseResponseDto> getMySales() {
         Long sellerId = AuthUtil.getAuthenticatedUserId();
         if (sellerId == null) throw new UnauthorizedException("Usuario no autenticado");
-
-        return purchaseRepository.findSalesBySellerId(sellerId).stream()
-                .map(this::mapToDto)
-                .toList();
+        return purchaseRepository.findSalesBySellerId(sellerId).stream().map(this::mapToDto).toList();
     }
 
     private PurchaseResponseDto mapToDto(Purchase purchase) {
@@ -131,9 +125,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         dto.setPaymentMethod(purchase.getPaymentMethod());
         dto.setTransactionId(purchase.getTransactionId());
 
-        if (purchase.getUser() != null) {
-            dto.setUserId(purchase.getUser().getId());
-        }
+        if (purchase.getUser() != null) dto.setUserId(purchase.getUser().getId());
 
         if (purchase.getPurchaseDetails() != null && !purchase.getPurchaseDetails().isEmpty()) {
             List<PurchaseDetailResponseDto> detailDtos = purchase.getPurchaseDetails().stream()
@@ -147,11 +139,9 @@ public class PurchaseServiceImpl implements PurchaseService {
                         d.setProductName(detail.getProduct().getName());
                     }
                     return d;
-                })
-                .toList();
+                }).toList();
             dto.setDetails(detailDtos);
         }
-
         return dto;
     }
 }
