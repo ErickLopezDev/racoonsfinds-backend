@@ -32,8 +32,41 @@ services:
     networks:
       - backend-net
 
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: racoonsfinds_prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+    networks:
+      - backend-net
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: racoonsfinds_grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - backend-net
+
 volumes:
   db_data:
+  prometheus_data:
+  grafana_data:
 
 networks:
   backend-net:
