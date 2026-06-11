@@ -28,19 +28,26 @@ public class MapperUtil {
                 .setMatchingStrategy(MatchingStrategies.STANDARD);
 
         // === PRODUCTOS (DTO → Entity) ===
-        mapper.typeMap(ProductRequestDto.class, Product.class).addMappings(m -> {
-            m.skip(Product::setId);
-            m.skip(Product::setVersion);
-            m.skip(Product::setUser);
-            m.skip(Product::setCategory);
-        });
+        // emptyTypeMap + skips antes de implicitMappings: con STANDARD, `categoryId`
+        // se mapearía implícitamente a `category.id` y entraría en conflicto con
+        // skip(setCategory). Declarar los skips primero evita ese choque.
+        mapper.emptyTypeMap(ProductRequestDto.class, Product.class)
+                .addMappings(m -> {
+                    m.skip(Product::setId);
+                    m.skip(Product::setVersion);
+                    m.skip(Product::setUser);
+                    m.skip(Product::setCategory);
+                })
+                .implicitMappings();
 
-        mapper.typeMap(ProductUpdateRequest.class, Product.class).addMappings(m -> {
-            m.skip(Product::setId);
-            m.skip(Product::setVersion);
-            m.skip(Product::setCategory);
-            m.skip(Product::setUser);
-        });
+        mapper.emptyTypeMap(ProductUpdateRequest.class, Product.class)
+                .addMappings(m -> {
+                    m.skip(Product::setId);
+                    m.skip(Product::setVersion);
+                    m.skip(Product::setCategory);
+                    m.skip(Product::setUser);
+                })
+                .implicitMappings();
 
         // === PRODUCTOS (Entity → DTO) ===
         // Campos con lógica adicional (S3, lazy relations, queries) se resuelven en el service
