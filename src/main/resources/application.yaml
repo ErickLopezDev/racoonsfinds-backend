@@ -3,7 +3,7 @@ spring:
     name: racoonsfinds-backend
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/${POSTGRES_NAME}
+    url: jdbc:postgresql://localhost:5432/${POSTGRES_DB}
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -18,6 +18,22 @@ security:
     secret: ${JWT_SECRET}
     expiration: 3600000
     refresh-expiration: 10080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
 
 logging:
   level:
