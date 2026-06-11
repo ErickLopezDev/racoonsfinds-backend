@@ -8,6 +8,7 @@ import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.CategoryRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
+import com.racoonsfinds.backend.repository.ReviewRepository;
 import com.racoonsfinds.backend.repository.UserRepository;
 // import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.AfterEach;
@@ -39,6 +40,7 @@ class ProductServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private S3Service s3Service;
     @Mock private ObjectMapper objectMapper;
+    @Mock private ReviewRepository reviewRepository;
 
     @InjectMocks
     private ProductServiceImpl productService;
@@ -98,6 +100,8 @@ class ProductServiceTest {
         Product p = new Product(); p.setId(1L); p.setName("A");
         Page<Product> page = new PageImpl<>(List.of(p), PageRequest.of(0, 10), 1);
         when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
+        when(reviewRepository.findAverageRatingByProductId(1L)).thenReturn(4.0);
+        when(reviewRepository.countByProductId(1L)).thenReturn(2L);
 
         var resp = productService.findAllPaged(0, 10, null, null, "id", "asc");
 
@@ -114,6 +118,8 @@ class ProductServiceTest {
         p.setUser(u); p.setCategory(c); p.setImage("k");
         when(s3Service.getFileUrl("k")).thenReturn("URL");
         when(productRepository.findById(5L)).thenReturn(Optional.of(p));
+        when(reviewRepository.findAverageRatingByProductId(5L)).thenReturn(4.5);
+        when(reviewRepository.countByProductId(5L)).thenReturn(3L);
 
         var dto = productService.getById(5L);
         assertEquals(5L, dto.getId());
@@ -122,6 +128,8 @@ class ProductServiceTest {
         assertEquals("C", dto.getCategoryName());
         assertEquals(1L, dto.getUserId());
         assertEquals("u", dto.getUserName());
+        assertEquals(4.5, dto.getAverageRating());
+        assertEquals(3L, dto.getReviewCount());
     }
 
     // @Test

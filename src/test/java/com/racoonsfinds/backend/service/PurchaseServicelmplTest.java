@@ -4,8 +4,9 @@ package com.racoonsfinds.backend.service;
 import com.racoonsfinds.backend.repository.CartRepository;
 import com.racoonsfinds.backend.repository.PurchaseDetailRepository;
 import com.racoonsfinds.backend.repository.PurchaseRepository;
-import com.racoonsfinds.backend.service.int_.NotificationService;
-import com.racoonsfinds.backend.shared.exception.NotFoundException;
+import com.racoonsfinds.backend.service.port.NotificationPort;
+import com.racoonsfinds.backend.service.port.ProductCatalogPort;
+import com.racoonsfinds.backend.shared.exception.BadRequestException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,7 +30,8 @@ class PurchaseServiceImplTest {
     @Mock private CartRepository cartRepository;
     @Mock private PurchaseRepository purchaseRepository;
     @Mock private PurchaseDetailRepository purchaseDetailRepository;
-    @Mock private NotificationService notificationService;
+    @Mock private ProductCatalogPort productCatalogPort;
+    @Mock private NotificationPort notificationPort;
 
     @InjectMocks
     private PurchaseServiceImpl purchaseService;
@@ -80,7 +82,7 @@ class PurchaseServiceImplTest {
     @Test
     void purchaseFromCart_ShouldThrow_WhenCartEmpty() {
         when(cartRepository.findByUserId(1L)).thenReturn(List.of());
-        assertThrows(NotFoundException.class, () -> purchaseService.purchaseFromCart(null));
+        assertThrows(BadRequestException.class, () -> purchaseService.purchaseFromCart(null));
     }
 
     // @Test

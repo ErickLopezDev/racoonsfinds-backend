@@ -6,8 +6,9 @@ import com.racoonsfinds.backend.model.Cart;
 import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.CartRepository;
-import com.racoonsfinds.backend.repository.ProductRepository;
-import com.racoonsfinds.backend.repository.UserRepository;
+import com.racoonsfinds.backend.service.port.ProductCatalogPort;
+import com.racoonsfinds.backend.service.port.ProductSnapshot;
+import com.racoonsfinds.backend.shared.exception.BadRequestException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,12 +35,14 @@ class CartServiceImplTest {
     @Mock
     private CartRepository cartRepository;
     @Mock
-    private ProductRepository productRepository;
-    @Mock
-    private UserRepository userRepository;
+    private ProductCatalogPort productCatalogPort;
 
     @InjectMocks
     private CartServiceImpl cartService;
+
+    private ProductSnapshot snapshot(int stock) {
+        return new ProductSnapshot(10L, "Prod", new BigDecimal("19.99"), "img/key.png", stock, 99L);
+    }
 
     @BeforeEach
     void setupSecurityContext() {
@@ -55,26 +58,9 @@ class CartServiceImplTest {
 
     @Test
     void addToCart_ShouldCreateNewCart_WhenNotExisting() {
-        User user = new User();
-        user.setId(1L);
-
-        Product product = new Product();
-        product.setId(10L);
-        product.setName("Prod");
-        product.setImage("img/key.png");
-        product.setPrice(new BigDecimal("19.99"));
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(productRepository.findById(10L)).thenReturn(Optional.of(product));
+        when(productCatalogPort.findById(10L)).thenReturn(snapshot(100));
         when(cartRepository.findByUserIdAndProductId(1L, 10L)).thenReturn(Optional.empty());
         when(s3Service.getFileUrl("img/key.png")).thenReturn("https://bucket/region/img/key.png");
-
-        Cart saved = new Cart();
-        saved.setId(100L);
-        saved.setUser(user);
-        saved.setProduct(product);
-        saved.setAmount(2);
-        when(cartRepository.save(any(Cart.class))).thenReturn(saved);
 
         CartRequestDto dto = new CartRequestDto();
         dto.setProductId(10L);
@@ -83,7 +69,6 @@ class CartServiceImplTest {
         CartResponseDto resp = cartService.addToCart(dto);
 
         assertNotNull(resp);
-        // ID puede ser nulo porque el servicio no reutiliza el retorno de save
         assertEquals(1L, resp.getUserId());
         assertEquals(10L, resp.getProductId());
         assertEquals("Prod", resp.getProductName());
@@ -95,7 +80,7 @@ class CartServiceImplTest {
     }
 
     @Test
-    void addToCart_ShouldUpdateExistingCart_WhenAlreadyExists() {
+    void addToCart_ShouldIncrementExistingCart_WhenAlreadyExists() {
         User user = new User(); user.setId(1L);
         Product product = new Product(); product.setId(10L);
 
@@ -105,10 +90,9 @@ class CartServiceImplTest {
         existing.setProduct(product);
         existing.setAmount(1);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(productRepository.findById(10L)).thenReturn(Optional.of(product));
+        when(productCatalogPort.findById(10L)).thenReturn(snapshot(100));
         when(cartRepository.findByUserIdAndProductId(1L, 10L)).thenReturn(Optional.of(existing));
-        when(cartRepository.save(existing)).thenReturn(existing);
+        when(s3Service.getFileUrl("img/key.png")).thenReturn("URL");
 
         CartRequestDto dto = new CartRequestDto();
         dto.setProductId(10L);
@@ -116,18 +100,28 @@ class CartServiceImplTest {
 
         CartResponseDto resp = cartService.addToCart(dto);
 
-        assertEquals(5, resp.getAmount());
+        // El servicio suma la cantidad nueva a la existente: 1 + 5 = 6
+        assertEquals(6, resp.getAmount());
         verify(cartRepository).save(existing);
+    }
+
+    @Test
+    void addToCart_ShouldThrow_WhenAmountExceedsStock() {
+        when(productCatalogPort.findById(10L)).thenReturn(snapshot(3));
+        when(cartRepository.findByUserIdAndProductId(1L, 10L)).thenReturn(Optional.empty());
+
+        CartRequestDto dto = new CartRequestDto();
+        dto.setProductId(10L);
+        dto.setAmount(5);
+
+        assertThrows(BadRequestException.class, () -> cartService.addToCart(dto));
+        verify(cartRepository, never()).save(any(Cart.class));
     }
 
     @Test
     void getUserCart_ShouldMapItems() {
         User user = new User(); user.setId(1L);
-        Product product = new Product();
-        product.setId(10L);
-        product.setName("Prod");
-        product.setImage("img/key.png");
-        product.setPrice(new BigDecimal("9.50"));
+        Product product = new Product(); product.setId(10L);
 
         Cart item = new Cart();
         item.setId(5L);
@@ -136,6 +130,7 @@ class CartServiceImplTest {
         item.setAmount(3);
 
         when(cartRepository.findByUserId(1L)).thenReturn(List.of(item));
+        when(productCatalogPort.findAllByIds(List.of(10L))).thenReturn(List.of(snapshot(100)));
         when(s3Service.getFileUrl("img/key.png")).thenReturn("URL");
 
         List<CartResponseDto> list = cartService.getUserCart();

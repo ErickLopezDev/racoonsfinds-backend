@@ -43,6 +43,9 @@ class AuthServiceTest {
     @Mock
     private EmailService emailService;
 
+    @Mock
+    private UserTransactionService userTransactionService;
+
     @InjectMocks
     private AuthServiceImpl authService;
 
@@ -83,7 +86,8 @@ class AuthServiceTest {
         assertNotNull(response);
         assertEquals("jwt-token", response.getAccessToken());
         assertEquals("refresh-token", response.getRefreshToken());
-        verify(userRepository, atLeastOnce()).save(mockUser);
+        // El login exitoso resetea los intentos vía UserTransactionService, no userRepository.save
+        verify(userTransactionService).resetFailedAttempts(mockUser);
     }
 
 
