@@ -2,7 +2,6 @@ package com.racoonsfinds.backend.review.service;
 
 import com.racoonsfinds.backend.review.dto.ReviewRequestDto;
 import com.racoonsfinds.backend.review.dto.ReviewResponseDto;
-import com.racoonsfinds.backend.catalog.domain.Product;
 import com.racoonsfinds.backend.review.domain.Review;
 import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.review.repository.ReviewRepository;
@@ -40,8 +39,6 @@ public class ReviewServiceImpl implements ReviewService {
 
         // Validates existence and crosses the catalog boundary via port (no direct repo access)
         Long resolvedProductId = productCatalogPort.findById(request.getProductId()).id();
-        Product product = new Product();
-        product.setId(resolvedProductId);
 
         // Usuario garantizado por JWT — proxy JPA para la FK sin query adicional
         User user = new User();
@@ -54,7 +51,7 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         Review review = new Review();
-        review.setProduct(product);
+        review.setProductId(resolvedProductId);
         review.setUser(user);
         review.setStars(request.getStars());
         review.setComment(request.getComment());

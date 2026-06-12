@@ -1,6 +1,5 @@
 package com.racoonsfinds.backend.review.domain;
 
-import com.racoonsfinds.backend.catalog.domain.Product;
 import com.racoonsfinds.backend.identity.domain.User;
 import java.time.LocalDate;
 
@@ -38,7 +37,8 @@ public class Review {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    // ID plano hacia catalog (sin FK JPA): cada servicio tendrá su propia BD.
+    // La validación de existencia cruza el boundary via ProductCatalogPort.
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
 }

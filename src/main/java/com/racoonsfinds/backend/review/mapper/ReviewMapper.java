@@ -19,7 +19,7 @@ public final class ReviewMapper {
 
     static {
         // === REVIEW (Entity → DTO) ===
-        // STANDARD resuelve product.id→productId, user.id→userId
+        // STANDARD resuelve productId→productId, user.id→userId
         // userName necesita mapeo explícito: user.username ≠ user.name
         mapper.typeMap(Review.class, ReviewResponseDto.class).addMappings(m -> {
             m.map(src -> src.getUser().getUsername(), ReviewResponseDto::setUserName);
