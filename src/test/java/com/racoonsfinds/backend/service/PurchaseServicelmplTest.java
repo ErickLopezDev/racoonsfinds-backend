@@ -1,9 +1,9 @@
 package com.racoonsfinds.backend.service;
 
 // import com.racoonsfinds.backend.model.*;
-import com.racoonsfinds.backend.repository.CartRepository;
 import com.racoonsfinds.backend.repository.PurchaseDetailRepository;
 import com.racoonsfinds.backend.repository.PurchaseRepository;
+import com.racoonsfinds.backend.service.port.CartPort;
 import com.racoonsfinds.backend.service.port.NotificationPort;
 import com.racoonsfinds.backend.service.port.ProductCatalogPort;
 import com.racoonsfinds.backend.shared.exception.BadRequestException;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class PurchaseServiceImplTest {
 
-    @Mock private CartRepository cartRepository;
+    @Mock private CartPort cartPort;
     @Mock private PurchaseRepository purchaseRepository;
     @Mock private PurchaseDetailRepository purchaseDetailRepository;
     @Mock private ProductCatalogPort productCatalogPort;
@@ -81,7 +81,7 @@ class PurchaseServiceImplTest {
 
     @Test
     void purchaseFromCart_ShouldThrow_WhenCartEmpty() {
-        when(cartRepository.findByUserId(1L)).thenReturn(List.of());
+        when(cartPort.itemsOf(1L)).thenReturn(List.of());
         assertThrows(BadRequestException.class, () -> purchaseService.purchaseFromCart(null));
     }
 

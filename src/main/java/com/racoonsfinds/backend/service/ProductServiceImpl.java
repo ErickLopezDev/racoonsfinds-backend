@@ -19,9 +19,10 @@ import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.User;
 import com.racoonsfinds.backend.repository.CategoryRepository;
 import com.racoonsfinds.backend.repository.ProductRepository;
-import com.racoonsfinds.backend.repository.ReviewRepository;
-import com.racoonsfinds.backend.repository.UserRepository;
 import com.racoonsfinds.backend.service.int_.ProductService;
+import com.racoonsfinds.backend.service.port.ReviewStatsPort;
+import com.racoonsfinds.backend.service.port.UserDirectoryPort;
+import com.racoonsfinds.backend.service.port.UserSnapshot;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 import com.racoonsfinds.backend.shared.utils.MapperUtil;
@@ -35,9 +36,9 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
-    private final UserRepository userRepository;
+    private final UserDirectoryPort userDirectoryPort;
     private final S3Service s3Service;
-    private final ReviewRepository reviewRepository;
+    private final ReviewStatsPort reviewStatsPort;
 
     public static final String PRODUCT_ID_NOT_FOUND = "Product not found with ID ";
 
@@ -53,8 +54,9 @@ public class ProductServiceImpl implements ProductService {
             throw new NotFoundException("Authenticated user not found");
         }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found with ID " + userId));
+        UserSnapshot userSnapshot = userDirectoryPort.findById(userId);
+        User user = new User();
+        user.setId(userSnapshot.id());
         product.setUser(user);
 
         // === Categoría ===
@@ -244,11 +246,8 @@ public class ProductServiceImpl implements ProductService {
             dto.setUserName(p.getUser().getUsername());
         }
 
-        // Set average rating and review count
-        Double averageRating = reviewRepository.findAverageRatingByProductId(p.getId());
-        Long reviewCount = reviewRepository.countByProductId(p.getId());
-        dto.setAverageRating(averageRating != null ? averageRating : 0.0);
-        dto.setReviewCount(reviewCount != null ? reviewCount : 0L);
+        dto.setAverageRating(reviewStatsPort.averageRating(p.getId()));
+        dto.setReviewCount(reviewStatsPort.count(p.getId()));
 
         return dto;
     }

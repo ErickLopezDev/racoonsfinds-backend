@@ -5,9 +5,9 @@ import com.racoonsfinds.backend.dto.review.ReviewResponseDto;
 import com.racoonsfinds.backend.model.Product;
 import com.racoonsfinds.backend.model.Review;
 import com.racoonsfinds.backend.model.User;
-import com.racoonsfinds.backend.repository.ProductRepository;
 import com.racoonsfinds.backend.repository.ReviewRepository;
 import com.racoonsfinds.backend.service.int_.ReviewService;
+import com.racoonsfinds.backend.service.port.ProductCatalogPort;
 import com.racoonsfinds.backend.shared.exception.ConflictException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
-    private final ProductRepository productRepository;
+    private final ProductCatalogPort productCatalogPort;
 
     @Override
     @Transactional
@@ -35,8 +35,10 @@ public class ReviewServiceImpl implements ReviewService {
         Long userId = AuthUtil.getAuthenticatedUserId();
         if (userId == null) throw new NotFoundException("Usuario no autenticado");
 
-        Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new NotFoundException("Producto no encontrado"));
+        // Validates existence and crosses the catalog boundary via port (no direct repo access)
+        Long resolvedProductId = productCatalogPort.findById(request.getProductId()).id();
+        Product product = new Product();
+        product.setId(resolvedProductId);
 
         // Usuario garantizado por JWT — proxy JPA para la FK sin query adicional
         User user = new User();

@@ -3,8 +3,11 @@ package com.racoonsfinds.backend.service;
 import com.racoonsfinds.backend.dto.purchase.PurchaseDetailResponseDto;
 import com.racoonsfinds.backend.dto.purchase.PurchaseResponseDto;
 import com.racoonsfinds.backend.model.*;
-import com.racoonsfinds.backend.repository.*;
+import com.racoonsfinds.backend.repository.PurchaseDetailRepository;
+import com.racoonsfinds.backend.repository.PurchaseRepository;
 import com.racoonsfinds.backend.service.int_.PurchaseService;
+import com.racoonsfinds.backend.service.port.CartItemSnapshot;
+import com.racoonsfinds.backend.service.port.CartPort;
 import com.racoonsfinds.backend.service.port.NotificationPort;
 import com.racoonsfinds.backend.service.port.ProductCatalogPort;
 import com.racoonsfinds.backend.service.port.ProductSnapshot;
@@ -27,7 +30,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PurchaseServiceImpl implements PurchaseService {
 
-    private final CartRepository cartRepository;
+    private final CartPort cartPort;
     private final PurchaseRepository purchaseRepository;
     private final PurchaseDetailRepository purchaseDetailRepository;
     private final ProductCatalogPort productCatalogPort;
@@ -39,17 +42,17 @@ public class PurchaseServiceImpl implements PurchaseService {
         Long buyerId = AuthUtil.getAuthenticatedUserId();
         if (buyerId == null) throw new UnauthorizedException("Usuario no autenticado");
 
-        List<Cart> cartItems = cartRepository.findByUserId(buyerId);
+        List<CartItemSnapshot> cartItems = cartPort.itemsOf(buyerId);
         if (cartItems.isEmpty()) throw new BadRequestException("El carrito está vacío");
 
         // Carga todos los snapshots en una sola llamada (1 query en monolito, 1 HTTP call en microservicio)
-        List<Long> productIds = cartItems.stream().map(c -> c.getProduct().getId()).toList();
+        List<Long> productIds = cartItems.stream().map(CartItemSnapshot::productId).toList();
         Map<Long, ProductSnapshot> snapshots = productCatalogPort.findAllByIds(productIds)
                 .stream().collect(Collectors.toMap(ProductSnapshot::id, s -> s));
 
         BigDecimal total = cartItems.stream()
-                .map(c -> snapshots.get(c.getProduct().getId()).price()
-                        .multiply(BigDecimal.valueOf(c.getAmount())))
+                .map(c -> snapshots.get(c.productId()).price()
+                        .multiply(BigDecimal.valueOf(c.amount())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Purchase purchase = new Purchase();
@@ -64,14 +67,14 @@ public class PurchaseServiceImpl implements PurchaseService {
         Purchase savedPurchase = purchaseRepository.save(purchase);
 
         List<PurchaseDetail> details = cartItems.stream().map(item -> {
-            ProductSnapshot snapshot = snapshots.get(item.getProduct().getId());
+            ProductSnapshot snapshot = snapshots.get(item.productId());
             Product productRef = new Product();
             productRef.setId(snapshot.id());
             PurchaseDetail d = new PurchaseDetail();
             d.setPurchase(savedPurchase);
             d.setProduct(productRef);
             d.setMonto(snapshot.price());
-            d.setAmount(item.getAmount());
+            d.setAmount(item.amount());
             return d;
         }).toList();
 
@@ -80,7 +83,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         // Decrementa stock via port (en microservicio: llamada al catalog-service)
         cartItems.forEach(item ->
-            productCatalogPort.decrementStock(item.getProduct().getId(), item.getAmount())
+            productCatalogPort.decrementStock(item.productId(), item.amount())
         );
 
         // Notifica via port (en microservicio: evento Kafka → notification-service)
@@ -95,7 +98,7 @@ public class PurchaseServiceImpl implements PurchaseService {
             }
         });
 
-        cartRepository.deleteByUserId(buyerId);
+        cartPort.clear(buyerId);
         return mapToDto(savedPurchase);
     }
 
