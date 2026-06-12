@@ -5,10 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 // import com.racoonsfinds.backend.catalog.dto.ProductResponseDto;
 import com.racoonsfinds.backend.catalog.domain.Category;
 import com.racoonsfinds.backend.catalog.domain.Product;
-import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.catalog.repository.CategoryRepository;
 import com.racoonsfinds.backend.catalog.repository.ProductRepository;
 import com.racoonsfinds.backend.identity.port.UserDirectoryPort;
+import com.racoonsfinds.backend.identity.port.UserSnapshot;
 import com.racoonsfinds.backend.platform.storage.S3Service;
 // import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.AfterEach;
@@ -110,12 +110,12 @@ class ProductServiceTest {
     @Test
     void getById_ShouldMapDto() {
         Product p = new Product(); p.setId(5L); p.setName("X");
-        User u = new User(); u.setId(1L); u.setUsername("u");
         Category c = new Category(); c.setId(2L); c.setName("C");
-        p.setUser(u); p.setCategory(c); p.setImage("k");
+        p.setUserId(1L); p.setCategory(c); p.setImage("k");
         p.setAverageRating(4.5); p.setReviewCount(3L);
         when(s3Service.getFileUrl("k")).thenReturn("URL");
         when(productRepository.findById(5L)).thenReturn(Optional.of(p));
+        when(userDirectoryPort.findById(1L)).thenReturn(new UserSnapshot(1L, "u"));
 
         var dto = productService.getById(5L);
         assertEquals(5L, dto.getId());

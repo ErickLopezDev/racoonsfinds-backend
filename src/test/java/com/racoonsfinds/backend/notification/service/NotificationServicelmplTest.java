@@ -34,8 +34,7 @@ class NotificationServiceImplTest {
         assertEquals("Mensaje", n.getMessage());
         assertFalse(Boolean.TRUE.equals(n.getRead()));
         assertEquals(LocalDate.now(), n.getDate());
-        assertNotNull(n.getUser());
-        assertEquals(1L, n.getUser().getId());
+        assertEquals(1L, n.getUserId());
 
         verify(notificationRepository).save(any(Notification.class));
     }

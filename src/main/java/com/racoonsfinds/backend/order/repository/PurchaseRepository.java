@@ -10,12 +10,11 @@ import java.util.List;
 
 public interface PurchaseRepository extends JpaRepository<Purchase, Long> {
     List<Purchase> findByUserId(Long userId);
-    // Ventas de productos del usuario autenticado (usa join con details → product)
+    // Ventas del vendedor: sellerId está denormalizado en el detalle (sin join cross-módulo)
     @Query("""
         SELECT DISTINCT p FROM Purchase p
         JOIN FETCH p.purchaseDetails d
-        JOIN FETCH d.product prod
-        WHERE prod.user.id = :sellerId
+        WHERE d.sellerId = :sellerId
         """)
     List<Purchase> findSalesBySellerId(@Param("sellerId") Long sellerId);
 }

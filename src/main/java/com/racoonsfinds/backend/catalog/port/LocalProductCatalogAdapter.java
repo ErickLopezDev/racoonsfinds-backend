@@ -56,7 +56,7 @@ public class LocalProductCatalogAdapter implements ProductCatalogPort {
                 p.getPrice(),
                 p.getImage(),
                 p.getStock(),
-                p.getUser() != null ? p.getUser().getId() : null
+                p.getUserId()
         );
     }
 }

@@ -1,16 +1,12 @@
 package com.racoonsfinds.backend.review.domain;
 
-import com.racoonsfinds.backend.identity.domain.User;
 import java.time.LocalDate;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -33,9 +29,8 @@ public class Review {
     @Column(name = "date", nullable = false)
     private LocalDate date;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
     // ID plano hacia catalog (sin FK JPA): cada servicio tendrá su propia BD.
     // La validación de existencia cruza el boundary via ProductCatalogPort.

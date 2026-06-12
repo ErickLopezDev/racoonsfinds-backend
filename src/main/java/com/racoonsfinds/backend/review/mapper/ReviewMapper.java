@@ -19,10 +19,10 @@ public final class ReviewMapper {
 
     static {
         // === REVIEW (Entity → DTO) ===
-        // STANDARD resuelve productId→productId, user.id→userId
-        // userName necesita mapeo explícito: user.username ≠ user.name
+        // STANDARD resuelve productId→productId, userId→userId.
+        // userName cruza el boundary identity y se resuelve en el service via UserDirectoryPort.
         mapper.typeMap(Review.class, ReviewResponseDto.class).addMappings(m -> {
-            m.map(src -> src.getUser().getUsername(), ReviewResponseDto::setUserName);
+            m.skip(ReviewResponseDto::setUserName);
         });
     }
 

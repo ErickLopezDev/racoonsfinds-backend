@@ -1,6 +1,5 @@
 package com.racoonsfinds.backend.order.domain;
 
-import com.racoonsfinds.backend.catalog.domain.Product;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -25,7 +24,14 @@ public class PurchaseDetail {
     @JoinColumn(name = "purchase_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "purchase_details_ibfk_1"))
     private Purchase purchase;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", referencedColumnName = "id", foreignKey = @ForeignKey(name = "purchase_details_ibfk_2"))
-    private Product product;
+    // Snapshot del producto en el momento de la compra (sin FK JPA hacia catalog).
+    // Las órdenes capturan datos point-in-time: sobreviven aunque el producto cambie o se borre.
+    @Column(name = "product_id")
+    private Long productId;
+
+    @Column(name = "product_name", length = 200)
+    private String productName;
+
+    @Column(name = "seller_id")
+    private Long sellerId;
 }

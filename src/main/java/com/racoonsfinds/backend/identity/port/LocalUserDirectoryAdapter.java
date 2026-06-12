@@ -1,5 +1,7 @@
 package com.racoonsfinds.backend.identity.port;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
 import com.racoonsfinds.backend.identity.repository.UserRepository;
@@ -24,5 +26,12 @@ public class LocalUserDirectoryAdapter implements UserDirectoryPort {
         return userRepository.findById(userId)
                 .map(u -> new UserSnapshot(u.getId(), u.getUsername()))
                 .orElseThrow(() -> new NotFoundException("User not found with ID " + userId));
+    }
+
+    @Override
+    public List<UserSnapshot> findAllByIds(List<Long> userIds) {
+        return userRepository.findAllById(userIds).stream()
+                .map(u -> new UserSnapshot(u.getId(), u.getUsername()))
+                .toList();
     }
 }

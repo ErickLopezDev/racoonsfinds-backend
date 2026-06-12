@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.racoonsfinds.backend.notification.domain.Notification;
-import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.notification.repository.NotificationRepository;
 import com.racoonsfinds.backend.notification.service.NotificationService;
 import com.racoonsfinds.backend.shared.exception.ForbiddenException;
@@ -29,11 +28,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setMessage(message);
         notification.setDate(LocalDate.now());
         notification.setRead(false);
-
-        // Proxy por ID para evitar query extra al crear la referencia
-        User user = new User();
-        user.setId(userId);
-        notification.setUser(user);
+        notification.setUserId(userId);
 
         return notificationRepository.save(notification);
     }
@@ -47,7 +42,7 @@ public class NotificationServiceImpl implements NotificationService {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NotFoundException("Notificación no encontrada"));
 
-        if (!notification.getUser().getId().equals(userId)) {
+        if (!notification.getUserId().equals(userId)) {
             throw new ForbiddenException("No puedes modificar notificaciones de otro usuario");
         }
 

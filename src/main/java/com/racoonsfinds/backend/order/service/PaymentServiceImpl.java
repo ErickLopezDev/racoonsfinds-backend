@@ -33,7 +33,7 @@ public class PaymentServiceImpl implements PaymentService {
         Purchase purchase = purchaseRepository.findById(request.getPurchaseId())
                 .orElseThrow(() -> new NotFoundException("Compra no encontrada"));
 
-        if (!purchase.getUser().getId().equals(userId)) {
+        if (!purchase.getUserId().equals(userId)) {
             throw new ForbiddenException("No autorizado para procesar este pago");
         }
 

@@ -17,7 +17,6 @@ import com.racoonsfinds.backend.catalog.dto.ProductRequestDto;
 import com.racoonsfinds.backend.catalog.dto.ProductResponseDto;
 import com.racoonsfinds.backend.catalog.domain.Category;
 import com.racoonsfinds.backend.catalog.domain.Product;
-import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.catalog.repository.CategoryRepository;
 import com.racoonsfinds.backend.catalog.repository.ProductRepository;
 import com.racoonsfinds.backend.catalog.service.ProductService;
@@ -54,9 +53,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         UserSnapshot userSnapshot = userDirectoryPort.findById(userId);
-        User user = new User();
-        user.setId(userSnapshot.id());
-        product.setUser(user);
+        product.setUserId(userSnapshot.id());
 
         // === Categoría ===
         if (req.getCategoryId() != null) {
@@ -110,10 +107,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // Mapear a DTO
-        List<ProductResponseDto> dtoList = products
-                .stream()
-                .map(this::mapToDto)
-                .toList();
+        List<ProductResponseDto> dtoList = mapToDtoList(products.getContent());
 
         return new PagedResponse<>(
                 dtoList,
@@ -162,10 +156,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // Mapear resultados
-        List<ProductResponseDto> dtoList = products
-                .stream()
-                .map(this::mapToDto)
-                .toList();
+        List<ProductResponseDto> dtoList = mapToDtoList(products.getContent());
 
         // Estructura de respuesta
         return new PagedResponse<>(
@@ -228,8 +219,30 @@ public class ProductServiceImpl implements ProductService {
     }
 
 
-    // === PRIVATE MAPPER ===
+    // === PRIVATE MAPPERS ===
+    private List<ProductResponseDto> mapToDtoList(List<Product> products) {
+        List<Long> userIds = products.stream()
+                .map(Product::getUserId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+
+        java.util.Map<Long, String> userNames = userDirectoryPort.findAllByIds(userIds).stream()
+                .collect(java.util.stream.Collectors.toMap(UserSnapshot::id, UserSnapshot::username));
+
+        return products.stream()
+                .map(p -> mapToDto(p, userNames.get(p.getUserId())))
+                .toList();
+    }
+
     private ProductResponseDto mapToDto(Product p) {
+        String userName = p.getUserId() != null
+                ? userDirectoryPort.findById(p.getUserId()).username()
+                : null;
+        return mapToDto(p, userName);
+    }
+
+    private ProductResponseDto mapToDto(Product p, String userName) {
         ProductResponseDto dto = CatalogMapper.map(p, ProductResponseDto.class);
 
         if (p.getImage() != null)
@@ -240,10 +253,7 @@ public class ProductServiceImpl implements ProductService {
             dto.setCategoryName(p.getCategory().getName());
         }
 
-        if (p.getUser() != null) {
-            dto.setUserId(p.getUser().getId());
-            dto.setUserName(p.getUser().getUsername());
-        }
+        dto.setUserName(userName);
 
         dto.setAverageRating(p.getAverageRating() != null ? p.getAverageRating() : 0.0);
         dto.setReviewCount(p.getReviewCount() != null ? p.getReviewCount() : 0L);

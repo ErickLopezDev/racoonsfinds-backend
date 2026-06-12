@@ -3,10 +3,11 @@ package com.racoonsfinds.backend.review.service;
 import com.racoonsfinds.backend.review.dto.ReviewRequestDto;
 import com.racoonsfinds.backend.review.dto.ReviewResponseDto;
 import com.racoonsfinds.backend.review.domain.Review;
-import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.review.repository.ReviewRepository;
 import com.racoonsfinds.backend.review.service.ReviewService;
 import com.racoonsfinds.backend.catalog.port.ProductCatalogPort;
+import com.racoonsfinds.backend.identity.port.UserDirectoryPort;
+import com.racoonsfinds.backend.identity.port.UserSnapshot;
 import com.racoonsfinds.backend.shared.exception.ConflictException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
@@ -21,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +32,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final ProductCatalogPort productCatalogPort;
+    private final UserDirectoryPort userDirectoryPort;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
@@ -40,24 +44,22 @@ public class ReviewServiceImpl implements ReviewService {
         // Validates existence and crosses the catalog boundary via port (no direct repo access)
         Long resolvedProductId = productCatalogPort.findById(request.getProductId()).id();
 
-        // Usuario garantizado por JWT — proxy JPA para la FK sin query adicional
-        User user = new User();
-        user.setId(userId);
-
         boolean alreadyReviewed = reviewRepository.findByProductId(request.getProductId())
-                .stream().anyMatch(r -> r.getUser().getId().equals(userId));
+                .stream().anyMatch(r -> r.getUserId().equals(userId));
         if (alreadyReviewed) {
             throw new ConflictException("Ya has reseñado este producto");
         }
 
         Review review = new Review();
         review.setProductId(resolvedProductId);
-        review.setUser(user);
+        review.setUserId(userId);
         review.setStars(request.getStars());
         review.setComment(request.getComment());
         review.setDate(LocalDate.now());
 
-        ReviewResponseDto response = ReviewMapper.map(reviewRepository.save(review), ReviewResponseDto.class);
+        Review saved = reviewRepository.save(review);
+        ReviewResponseDto response = ReviewMapper.map(saved, ReviewResponseDto.class);
+        response.setUserName(userDirectoryPort.findById(userId).username());
 
         publishStatsChanged(request.getProductId());
 
@@ -76,9 +78,23 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     @Transactional(readOnly = true)
     public List<ReviewResponseDto> getReviewsByProduct(Long productId) {
-        return reviewRepository.findByProductId(productId)
-                .stream()
-                .map(r -> ReviewMapper.map(r, ReviewResponseDto.class))
+        List<Review> reviews = reviewRepository.findByProductId(productId);
+
+        List<Long> userIds = reviews.stream()
+                .map(Review::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, String> userNames = userDirectoryPort.findAllByIds(userIds).stream()
+                .collect(Collectors.toMap(UserSnapshot::id, UserSnapshot::username));
+
+        return reviews.stream()
+                .map(r -> {
+                    ReviewResponseDto dto = ReviewMapper.map(r, ReviewResponseDto.class);
+                    dto.setUserName(userNames.get(r.getUserId()));
+                    return dto;
+                })
                 .collect(Collectors.toList());
     }
 

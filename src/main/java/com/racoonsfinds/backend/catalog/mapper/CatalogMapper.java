@@ -28,7 +28,7 @@ public final class CatalogMapper {
                 .addMappings(m -> {
                     m.skip(Product::setId);
                     m.skip(Product::setVersion);
-                    m.skip(Product::setUser);
+                    m.skip(Product::setUserId);
                     m.skip(Product::setCategory);
                 })
                 .implicitMappings();
@@ -38,7 +38,7 @@ public final class CatalogMapper {
                     m.skip(Product::setId);
                     m.skip(Product::setVersion);
                     m.skip(Product::setCategory);
-                    m.skip(Product::setUser);
+                    m.skip(Product::setUserId);
                 })
                 .implicitMappings();
 
@@ -47,7 +47,6 @@ public final class CatalogMapper {
         mapper.typeMap(Product.class, ProductResponseDto.class).addMappings(m -> {
             m.skip(ProductResponseDto::setCategoryId);
             m.skip(ProductResponseDto::setCategoryName);
-            m.skip(ProductResponseDto::setUserId);
             m.skip(ProductResponseDto::setUserName);
             m.skip(ProductResponseDto::setImage);
             m.skip(ProductResponseDto::setAverageRating);

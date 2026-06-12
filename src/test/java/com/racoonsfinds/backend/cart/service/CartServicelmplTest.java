@@ -3,8 +3,6 @@ package com.racoonsfinds.backend.cart.service;
 import com.racoonsfinds.backend.cart.dto.CartRequestDto;
 import com.racoonsfinds.backend.cart.dto.CartResponseDto;
 import com.racoonsfinds.backend.cart.domain.Cart;
-import com.racoonsfinds.backend.catalog.domain.Product;
-import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.cart.repository.CartRepository;
 import com.racoonsfinds.backend.catalog.port.ProductCatalogPort;
 import com.racoonsfinds.backend.catalog.port.ProductSnapshot;
@@ -82,13 +80,10 @@ class CartServiceImplTest {
 
     @Test
     void addToCart_ShouldIncrementExistingCart_WhenAlreadyExists() {
-        User user = new User(); user.setId(1L);
-        Product product = new Product(); product.setId(10L);
-
         Cart existing = new Cart();
         existing.setId(50L);
-        existing.setUser(user);
-        existing.setProduct(product);
+        existing.setUserId(1L);
+        existing.setProductId(10L);
         existing.setAmount(1);
 
         when(productCatalogPort.findById(10L)).thenReturn(snapshot(100));
@@ -121,13 +116,10 @@ class CartServiceImplTest {
 
     @Test
     void getUserCart_ShouldMapItems() {
-        User user = new User(); user.setId(1L);
-        Product product = new Product(); product.setId(10L);
-
         Cart item = new Cart();
         item.setId(5L);
-        item.setUser(user);
-        item.setProduct(product);
+        item.setUserId(1L);
+        item.setProductId(10L);
         item.setAmount(3);
 
         when(cartRepository.findByUserId(1L)).thenReturn(List.of(item));

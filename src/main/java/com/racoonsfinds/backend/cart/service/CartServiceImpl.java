@@ -11,8 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.racoonsfinds.backend.cart.dto.CartRequestDto;
 import com.racoonsfinds.backend.cart.dto.CartResponseDto;
 import com.racoonsfinds.backend.cart.domain.Cart;
-import com.racoonsfinds.backend.catalog.domain.Product;
-import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.cart.repository.CartRepository;
 import com.racoonsfinds.backend.cart.service.CartService;
 import com.racoonsfinds.backend.catalog.port.ProductCatalogPort;
@@ -41,8 +39,8 @@ public class CartServiceImpl implements CartService {
 
         if (cart == null) {
             cart = new Cart();
-            cart.setUser(userRef(userId));
-            cart.setProduct(productRef(snapshot.id()));
+            cart.setUserId(userId);
+            cart.setProductId(snapshot.id());
             cart.setAmount(dto.getAmount());
         } else {
             cart.setAmount(cart.getAmount() + dto.getAmount());
@@ -66,12 +64,12 @@ public class CartServiceImpl implements CartService {
         Long userId = AuthUtil.getAuthenticatedUserId();
         List<Cart> carts = cartRepository.findByUserId(userId);
 
-        List<Long> productIds = carts.stream().map(c -> c.getProduct().getId()).toList();
+        List<Long> productIds = carts.stream().map(Cart::getProductId).toList();
         Map<Long, ProductSnapshot> snapshots = productCatalogPort.findAllByIds(productIds)
                 .stream().collect(Collectors.toMap(ProductSnapshot::id, s -> s));
 
         return carts.stream()
-                .map(c -> toDto(c, snapshots.get(c.getProduct().getId())))
+                .map(c -> toDto(c, snapshots.get(c.getProductId())))
                 .collect(Collectors.toList());
     }
 
@@ -83,24 +81,12 @@ public class CartServiceImpl implements CartService {
     private CartResponseDto toDto(Cart cart, ProductSnapshot snapshot) {
         CartResponseDto dto = new CartResponseDto();
         dto.setId(cart.getId());
-        dto.setUserId(cart.getUser() != null ? cart.getUser().getId() : null);
+        dto.setUserId(cart.getUserId());
         dto.setProductId(snapshot.id());
         dto.setProductName(snapshot.name());
         dto.setProductImage(s3Service.getFileUrl(snapshot.imageKey()));
         dto.setProductPrice(snapshot.price());
         dto.setAmount(cart.getAmount());
         return dto;
-    }
-
-    private static User userRef(Long userId) {
-        User ref = new User();
-        ref.setId(userId);
-        return ref;
-    }
-
-    private static Product productRef(Long productId) {
-        Product ref = new Product();
-        ref.setId(productId);
-        return ref;
     }
 }

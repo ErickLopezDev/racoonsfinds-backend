@@ -2,8 +2,6 @@ package com.racoonsfinds.backend.wishlist.service;
 
 import com.racoonsfinds.backend.wishlist.dto.WishlistRequestDto;
 import com.racoonsfinds.backend.wishlist.dto.WishlistResponseDto;
-import com.racoonsfinds.backend.catalog.domain.Product;
-import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.wishlist.domain.Wishlist;
 import com.racoonsfinds.backend.wishlist.repository.WishlistRepository;
 import com.racoonsfinds.backend.catalog.port.ProductCatalogPort;
@@ -88,10 +86,7 @@ class WishlistServiceImplTest {
 
     @Test
     void getUserWishlist_ShouldMapItems() {
-        User user = new User(); user.setId(1L);
-        Product product = new Product(); product.setId(10L);
-
-        Wishlist wl = new Wishlist(); wl.setId(3L); wl.setUser(user); wl.setProduct(product);
+        Wishlist wl = new Wishlist(); wl.setId(3L); wl.setUserId(1L); wl.setProductId(10L);
         when(wishlistRepository.findByUserId(1L)).thenReturn(List.of(wl));
         when(productCatalogPort.findAllByIds(List.of(10L))).thenReturn(List.of(snapshot()));
         when(s3Service.getFileUrl("img/a")).thenReturn("URL");

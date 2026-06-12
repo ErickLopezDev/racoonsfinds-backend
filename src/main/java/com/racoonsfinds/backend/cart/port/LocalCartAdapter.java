@@ -24,7 +24,7 @@ public class LocalCartAdapter implements CartPort {
     @Override
     public List<CartItemSnapshot> itemsOf(Long userId) {
         return cartRepository.findByUserId(userId).stream()
-                .map(c -> new CartItemSnapshot(c.getProduct().getId(), c.getAmount()))
+                .map(c -> new CartItemSnapshot(c.getProductId(), c.getAmount()))
                 .toList();
     }
 

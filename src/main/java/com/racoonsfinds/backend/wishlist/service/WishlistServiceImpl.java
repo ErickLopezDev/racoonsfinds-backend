@@ -10,8 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.racoonsfinds.backend.wishlist.dto.WishlistRequestDto;
 import com.racoonsfinds.backend.wishlist.dto.WishlistResponseDto;
-import com.racoonsfinds.backend.catalog.domain.Product;
-import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.wishlist.domain.Wishlist;
 import com.racoonsfinds.backend.wishlist.repository.WishlistRepository;
 import com.racoonsfinds.backend.wishlist.service.WishlistService;
@@ -40,8 +38,8 @@ public class WishlistServiceImpl implements WishlistService {
                 .ifPresent(wl -> { throw new ConflictException("El producto ya está en tu wishlist"); });
 
         Wishlist wishlist = new Wishlist();
-        wishlist.setUser(userRef(userId));
-        wishlist.setProduct(productRef(snapshot.id()));
+        wishlist.setUserId(userId);
+        wishlist.setProductId(snapshot.id());
         wishlistRepository.save(wishlist);
 
         return toDto(wishlist, snapshot, userId);
@@ -57,12 +55,12 @@ public class WishlistServiceImpl implements WishlistService {
         Long userId = AuthUtil.getAuthenticatedUserId();
         List<Wishlist> wishlists = wishlistRepository.findByUserId(userId);
 
-        List<Long> productIds = wishlists.stream().map(w -> w.getProduct().getId()).toList();
+        List<Long> productIds = wishlists.stream().map(Wishlist::getProductId).toList();
         Map<Long, ProductSnapshot> snapshots = productCatalogPort.findAllByIds(productIds)
                 .stream().collect(Collectors.toMap(ProductSnapshot::id, s -> s));
 
         return wishlists.stream()
-                .map(w -> toDto(w, snapshots.get(w.getProduct().getId()), userId))
+                .map(w -> toDto(w, snapshots.get(w.getProductId()), userId))
                 .collect(Collectors.toList());
     }
 
@@ -75,17 +73,5 @@ public class WishlistServiceImpl implements WishlistService {
         dto.setProductImage(s3Service.getFileUrl(snapshot.imageKey()));
         dto.setProductPrice(snapshot.price());
         return dto;
-    }
-
-    private static User userRef(Long userId) {
-        User ref = new User();
-        ref.setId(userId);
-        return ref;
-    }
-
-    private static Product productRef(Long productId) {
-        Product ref = new Product();
-        ref.setId(productId);
-        return ref;
     }
 }

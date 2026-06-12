@@ -1,6 +1,5 @@
 package com.racoonsfinds.backend.catalog.domain;
 
-import com.racoonsfinds.backend.identity.domain.User;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
@@ -56,9 +55,8 @@ public class Product {
     @JoinColumn(name = "category_id")
     private Category category;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @Column(name = "user_id")
+    private Long userId;
 
     @Version
     private Long version;

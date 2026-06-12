@@ -2,10 +2,8 @@ package com.racoonsfinds.backend.order.service;
 
 import com.racoonsfinds.backend.order.dto.PurchaseDetailResponseDto;
 import com.racoonsfinds.backend.order.dto.PurchaseResponseDto;
-import com.racoonsfinds.backend.catalog.domain.Product;
 import com.racoonsfinds.backend.order.domain.Purchase;
 import com.racoonsfinds.backend.order.domain.PurchaseDetail;
-import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.order.repository.PurchaseDetailRepository;
 import com.racoonsfinds.backend.order.repository.PurchaseRepository;
 import com.racoonsfinds.backend.order.service.PurchaseService;
@@ -63,19 +61,17 @@ public class PurchaseServiceImpl implements PurchaseService {
         purchase.setMonto(total);
         purchase.setDescription(description != null ? description : "Compra desde carrito");
         purchase.setPaymentStatus("PENDING");
-        User buyer = new User();
-        buyer.setId(buyerId);
-        purchase.setUser(buyer);
+        purchase.setUserId(buyerId);
 
         Purchase savedPurchase = purchaseRepository.save(purchase);
 
         List<PurchaseDetail> details = cartItems.stream().map(item -> {
             ProductSnapshot snapshot = snapshots.get(item.productId());
-            Product productRef = new Product();
-            productRef.setId(snapshot.id());
             PurchaseDetail d = new PurchaseDetail();
             d.setPurchase(savedPurchase);
-            d.setProduct(productRef);
+            d.setProductId(snapshot.id());
+            d.setProductName(snapshot.name());
+            d.setSellerId(snapshot.sellerId());
             d.setMonto(snapshot.price());
             d.setAmount(item.amount());
             return d;
@@ -131,7 +127,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         dto.setPaymentMethod(purchase.getPaymentMethod());
         dto.setTransactionId(purchase.getTransactionId());
 
-        if (purchase.getUser() != null) dto.setUserId(purchase.getUser().getId());
+        dto.setUserId(purchase.getUserId());
 
         if (purchase.getPurchaseDetails() != null && !purchase.getPurchaseDetails().isEmpty()) {
             List<PurchaseDetailResponseDto> detailDtos = purchase.getPurchaseDetails().stream()
@@ -140,10 +136,8 @@ public class PurchaseServiceImpl implements PurchaseService {
                     d.setId(detail.getId());
                     d.setAmount(detail.getAmount());
                     d.setMonto(detail.getMonto());
-                    if (detail.getProduct() != null) {
-                        d.setProductId(detail.getProduct().getId());
-                        d.setProductName(detail.getProduct().getName());
-                    }
+                    d.setProductId(detail.getProductId());
+                    d.setProductName(detail.getProductName());
                     return d;
                 }).toList();
             dto.setDetails(detailDtos);
