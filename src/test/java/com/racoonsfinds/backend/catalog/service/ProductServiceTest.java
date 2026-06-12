@@ -8,7 +8,7 @@ import com.racoonsfinds.backend.catalog.domain.Product;
 import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.catalog.repository.CategoryRepository;
 import com.racoonsfinds.backend.catalog.repository.ProductRepository;
-import com.racoonsfinds.backend.review.port.ReviewStatsPort;
+import com.racoonsfinds.backend.catalog.port.ReviewStatsPort;
 import com.racoonsfinds.backend.identity.port.UserDirectoryPort;
 import com.racoonsfinds.backend.platform.storage.S3Service;
 // import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;

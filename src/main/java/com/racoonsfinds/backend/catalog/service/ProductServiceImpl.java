@@ -21,12 +21,12 @@ import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.catalog.repository.CategoryRepository;
 import com.racoonsfinds.backend.catalog.repository.ProductRepository;
 import com.racoonsfinds.backend.catalog.service.ProductService;
-import com.racoonsfinds.backend.review.port.ReviewStatsPort;
+import com.racoonsfinds.backend.catalog.port.ReviewStatsPort;
 import com.racoonsfinds.backend.identity.port.UserDirectoryPort;
 import com.racoonsfinds.backend.identity.port.UserSnapshot;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.MapperUtil;
+import com.racoonsfinds.backend.catalog.mapper.CatalogMapper;
 import org.springframework.data.domain.Pageable;
 
 import lombok.RequiredArgsConstructor;
@@ -45,7 +45,7 @@ public class ProductServiceImpl implements ProductService {
 
     @Transactional
     public ProductResponseDto createProduct(MultipartFile file, ProductRequestDto req) throws IOException {
-        Product product = MapperUtil.map(req, Product.class);
+        Product product = CatalogMapper.map(req, Product.class);
         product.setCreatedDate(LocalDate.now());
         product.setEliminado(false);
 
@@ -74,7 +74,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Product saved = productRepository.save(product);
-        return MapperUtil.map(saved, ProductResponseDto.class);
+        return CatalogMapper.map(saved, ProductResponseDto.class);
     }
 
     public PagedResponse<ProductResponseDto> findAllPagedByUserId(
@@ -211,7 +211,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Product saved = productRepository.save(existing);
-        return MapperUtil.map(saved, ProductResponseDto.class);
+        return CatalogMapper.map(saved, ProductResponseDto.class);
     }
 
     @Transactional
@@ -232,7 +232,7 @@ public class ProductServiceImpl implements ProductService {
 
     // === PRIVATE MAPPER ===
     private ProductResponseDto mapToDto(Product p) {
-        ProductResponseDto dto = MapperUtil.map(p, ProductResponseDto.class);
+        ProductResponseDto dto = CatalogMapper.map(p, ProductResponseDto.class);
 
         if (p.getImage() != null)
             dto.setImage(s3Service.getFileUrl(p.getImage()));

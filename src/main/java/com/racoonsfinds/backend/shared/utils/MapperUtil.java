@@ -4,75 +4,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
-import org.modelmapper.convention.MatchingStrategies;
 
-import com.racoonsfinds.backend.catalog.dto.ProductRequestDto;
-import com.racoonsfinds.backend.catalog.dto.ProductResponseDto;
-import com.racoonsfinds.backend.catalog.dto.ProductUpdateRequest;
-import com.racoonsfinds.backend.review.dto.ReviewResponseDto;
-import com.racoonsfinds.backend.identity.dto.user.UserDto;
-import com.racoonsfinds.backend.catalog.domain.Product;
-import com.racoonsfinds.backend.review.domain.Review;
-import com.racoonsfinds.backend.identity.domain.User;
-
+/**
+ * Mapper genérico (sin typeMaps de dominio). Para mapeos con reglas específicas
+ * cada dominio define su propio mapper (ej. CatalogMapper, ReviewMapper).
+ */
 public class MapperUtil {
 
-    private static final ModelMapper mapper = new ModelMapper();
+    private static final ModelMapper mapper = ModelMapperFactory.standard();
 
     private MapperUtil() {
-    }
-
-    static {
-        mapper.getConfiguration()
-                .setSkipNullEnabled(true)
-                .setMatchingStrategy(MatchingStrategies.STANDARD);
-
-        // === PRODUCTOS (DTO → Entity) ===
-        // emptyTypeMap + skips antes de implicitMappings: con STANDARD, `categoryId`
-        // se mapearía implícitamente a `category.id` y entraría en conflicto con
-        // skip(setCategory). Declarar los skips primero evita ese choque.
-        mapper.emptyTypeMap(ProductRequestDto.class, Product.class)
-                .addMappings(m -> {
-                    m.skip(Product::setId);
-                    m.skip(Product::setVersion);
-                    m.skip(Product::setUser);
-                    m.skip(Product::setCategory);
-                })
-                .implicitMappings();
-
-        mapper.emptyTypeMap(ProductUpdateRequest.class, Product.class)
-                .addMappings(m -> {
-                    m.skip(Product::setId);
-                    m.skip(Product::setVersion);
-                    m.skip(Product::setCategory);
-                    m.skip(Product::setUser);
-                })
-                .implicitMappings();
-
-        // === PRODUCTOS (Entity → DTO) ===
-        // Campos con lógica adicional (S3, lazy relations, queries) se resuelven en el service
-        mapper.typeMap(Product.class, ProductResponseDto.class).addMappings(m -> {
-            m.skip(ProductResponseDto::setCategoryId);
-            m.skip(ProductResponseDto::setCategoryName);
-            m.skip(ProductResponseDto::setUserId);
-            m.skip(ProductResponseDto::setUserName);
-            m.skip(ProductResponseDto::setImage);
-            m.skip(ProductResponseDto::setAverageRating);
-            m.skip(ProductResponseDto::setReviewCount);
-        });
-
-        // === REVIEW (Entity → DTO) ===
-        // STANDARD resuelve product.id→productId, user.id→userId
-        // userName necesita mapeo explícito: user.username ≠ user.name
-        mapper.typeMap(Review.class, ReviewResponseDto.class).addMappings(m -> {
-            m.map(src -> src.getUser().getUsername(), ReviewResponseDto::setUserName);
-        });
-
-        // === USUARIO (DTO → Entity) ===
-        mapper.typeMap(UserDto.class, User.class).addMappings(m -> {
-            m.skip(User::setId);
-            m.skip(User::setPassword);
-        });
     }
 
     public static <D, T> D map(final T entity, Class<D> outClass) {

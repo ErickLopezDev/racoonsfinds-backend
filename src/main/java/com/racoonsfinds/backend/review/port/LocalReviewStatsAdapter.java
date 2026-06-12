@@ -3,7 +3,7 @@ package com.racoonsfinds.backend.review.port;
 import org.springframework.stereotype.Component;
 
 import com.racoonsfinds.backend.review.repository.ReviewRepository;
-import com.racoonsfinds.backend.review.port.ReviewStatsPort;
+import com.racoonsfinds.backend.catalog.port.ReviewStatsPort;
 
 import lombok.RequiredArgsConstructor;
 

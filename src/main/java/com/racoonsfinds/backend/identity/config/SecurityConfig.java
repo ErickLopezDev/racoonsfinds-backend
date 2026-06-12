@@ -1,4 +1,4 @@
-package com.racoonsfinds.backend.config;
+package com.racoonsfinds.backend.identity.config;
 
 import java.util.List;
 
@@ -24,11 +24,11 @@ import com.racoonsfinds.backend.identity.security.JwtAuthenticationFilter;
 import com.racoonsfinds.backend.identity.security.JwtUtil;
 import com.racoonsfinds.backend.identity.service.RefreshTokenService;
 
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
@@ -87,7 +87,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public HttpFirewall defaultHttpFirewall() { 
+    public HttpFirewall defaultHttpFirewall() {
         return new DefaultHttpFirewall();
     }
 }

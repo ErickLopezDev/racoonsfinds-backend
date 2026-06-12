@@ -11,7 +11,7 @@ import com.racoonsfinds.backend.catalog.port.ProductCatalogPort;
 import com.racoonsfinds.backend.shared.exception.ConflictException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
-import com.racoonsfinds.backend.shared.utils.MapperUtil;
+import com.racoonsfinds.backend.review.mapper.ReviewMapper;
 
 import lombok.RequiredArgsConstructor;
 
@@ -57,7 +57,7 @@ public class ReviewServiceImpl implements ReviewService {
         review.setComment(request.getComment());
         review.setDate(LocalDate.now());
 
-        return MapperUtil.map(reviewRepository.save(review), ReviewResponseDto.class);
+        return ReviewMapper.map(reviewRepository.save(review), ReviewResponseDto.class);
     }
 
     @Override
@@ -65,7 +65,7 @@ public class ReviewServiceImpl implements ReviewService {
     public List<ReviewResponseDto> getReviewsByProduct(Long productId) {
         return reviewRepository.findByProductId(productId)
                 .stream()
-                .map(r -> MapperUtil.map(r, ReviewResponseDto.class))
+                .map(r -> ReviewMapper.map(r, ReviewResponseDto.class))
                 .collect(Collectors.toList());
     }
 
