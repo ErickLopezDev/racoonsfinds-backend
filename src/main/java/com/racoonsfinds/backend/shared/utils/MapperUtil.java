@@ -6,14 +6,14 @@ import java.util.stream.Collectors;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 
-import com.racoonsfinds.backend.dto.products.ProductRequestDto;
-import com.racoonsfinds.backend.dto.products.ProductResponseDto;
-import com.racoonsfinds.backend.dto.products.ProductUpdateRequest;
-import com.racoonsfinds.backend.dto.review.ReviewResponseDto;
-import com.racoonsfinds.backend.dto.user.UserDto;
-import com.racoonsfinds.backend.model.Product;
-import com.racoonsfinds.backend.model.Review;
-import com.racoonsfinds.backend.model.User;
+import com.racoonsfinds.backend.catalog.dto.ProductRequestDto;
+import com.racoonsfinds.backend.catalog.dto.ProductResponseDto;
+import com.racoonsfinds.backend.catalog.dto.ProductUpdateRequest;
+import com.racoonsfinds.backend.review.dto.ReviewResponseDto;
+import com.racoonsfinds.backend.identity.dto.user.UserDto;
+import com.racoonsfinds.backend.catalog.domain.Product;
+import com.racoonsfinds.backend.review.domain.Review;
+import com.racoonsfinds.backend.identity.domain.User;
 
 public class MapperUtil {
 

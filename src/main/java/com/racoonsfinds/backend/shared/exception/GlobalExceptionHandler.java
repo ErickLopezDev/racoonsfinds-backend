@@ -5,7 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import com.racoonsfinds.backend.dto.ApiResponse;
+import com.racoonsfinds.backend.shared.dto.ApiResponse;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

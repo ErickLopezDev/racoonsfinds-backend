@@ -1,0 +1,28 @@
+package com.racoonsfinds.backend.order.api;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.racoonsfinds.backend.shared.dto.ApiResponse;
+import com.racoonsfinds.backend.order.dto.PurchaseResponseDto;
+import com.racoonsfinds.backend.order.service.PurchaseService;
+import com.racoonsfinds.backend.shared.utils.ResponseUtil;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("api/sales")
+@RequiredArgsConstructor
+public class SalesController {
+
+  private final PurchaseService purchaseService;
+
+  @GetMapping
+  public ResponseEntity<ApiResponse<List<PurchaseResponseDto>>> getSalesByUser() {
+      return ResponseUtil.ok("Listado de ventas", purchaseService.getMySales());
+  }
+}

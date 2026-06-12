@@ -3,7 +3,7 @@ package com.racoonsfinds.backend.shared.utils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import com.racoonsfinds.backend.dto.ApiResponse;
+import com.racoonsfinds.backend.shared.dto.ApiResponse;
 
 public class ResponseUtil {
 

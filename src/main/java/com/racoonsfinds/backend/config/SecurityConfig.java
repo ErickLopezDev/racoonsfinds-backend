@@ -19,10 +19,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.racoonsfinds.backend.repository.UserRepository;
-import com.racoonsfinds.backend.security.JwtAuthenticationFilter;
-import com.racoonsfinds.backend.security.JwtUtil;
-import com.racoonsfinds.backend.service.RefreshTokenService;
+import com.racoonsfinds.backend.identity.repository.UserRepository;
+import com.racoonsfinds.backend.identity.security.JwtAuthenticationFilter;
+import com.racoonsfinds.backend.identity.security.JwtUtil;
+import com.racoonsfinds.backend.identity.service.RefreshTokenService;
 
 import lombok.AllArgsConstructor;
 

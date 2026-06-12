@@ -1,0 +1,30 @@
+package com.racoonsfinds.backend.catalog.dto;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class ProductResponseDto {
+    private Long id;
+    private String name;
+    private Integer stock;
+    private String image;
+    private BigDecimal price;
+    private String description;
+    private LocalDate createdDate;
+    private Boolean eliminado;
+    private Long categoryId;
+    private String categoryName;
+    private Long userId;
+    private String userName;
+    private Double averageRating;
+    private Long reviewCount;
+}
