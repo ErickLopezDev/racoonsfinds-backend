@@ -8,7 +8,6 @@ import com.racoonsfinds.backend.catalog.domain.Product;
 import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.catalog.repository.CategoryRepository;
 import com.racoonsfinds.backend.catalog.repository.ProductRepository;
-import com.racoonsfinds.backend.catalog.port.ReviewStatsPort;
 import com.racoonsfinds.backend.identity.port.UserDirectoryPort;
 import com.racoonsfinds.backend.platform.storage.S3Service;
 // import com.racoonsfinds.backend.shared.exception.ResourceNotFoundException;
@@ -41,7 +40,6 @@ class ProductServiceTest {
     @Mock private UserDirectoryPort userDirectoryPort;
     @Mock private S3Service s3Service;
     @Mock private ObjectMapper objectMapper;
-    @Mock private ReviewStatsPort reviewStatsPort;
 
     @InjectMocks
     private ProductServiceImpl productService;
@@ -101,8 +99,6 @@ class ProductServiceTest {
         Product p = new Product(); p.setId(1L); p.setName("A");
         Page<Product> page = new PageImpl<>(List.of(p), PageRequest.of(0, 10), 1);
         when(productRepository.findAll(any(Pageable.class))).thenReturn(page);
-        when(reviewStatsPort.averageRating(1L)).thenReturn(4.0);
-        when(reviewStatsPort.count(1L)).thenReturn(2L);
 
         var resp = productService.findAllPaged(0, 10, null, null, "id", "asc");
 
@@ -117,10 +113,9 @@ class ProductServiceTest {
         User u = new User(); u.setId(1L); u.setUsername("u");
         Category c = new Category(); c.setId(2L); c.setName("C");
         p.setUser(u); p.setCategory(c); p.setImage("k");
+        p.setAverageRating(4.5); p.setReviewCount(3L);
         when(s3Service.getFileUrl("k")).thenReturn("URL");
         when(productRepository.findById(5L)).thenReturn(Optional.of(p));
-        when(reviewStatsPort.averageRating(5L)).thenReturn(4.5);
-        when(reviewStatsPort.count(5L)).thenReturn(3L);
 
         var dto = productService.getById(5L);
         assertEquals(5L, dto.getId());

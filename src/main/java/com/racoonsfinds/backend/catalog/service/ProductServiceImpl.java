@@ -21,7 +21,6 @@ import com.racoonsfinds.backend.identity.domain.User;
 import com.racoonsfinds.backend.catalog.repository.CategoryRepository;
 import com.racoonsfinds.backend.catalog.repository.ProductRepository;
 import com.racoonsfinds.backend.catalog.service.ProductService;
-import com.racoonsfinds.backend.catalog.port.ReviewStatsPort;
 import com.racoonsfinds.backend.identity.port.UserDirectoryPort;
 import com.racoonsfinds.backend.identity.port.UserSnapshot;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
@@ -39,7 +38,6 @@ public class ProductServiceImpl implements ProductService {
     private final CategoryRepository categoryRepository;
     private final UserDirectoryPort userDirectoryPort;
     private final S3Service s3Service;
-    private final ReviewStatsPort reviewStatsPort;
 
     public static final String PRODUCT_ID_NOT_FOUND = "Product not found with ID ";
 
@@ -247,8 +245,8 @@ public class ProductServiceImpl implements ProductService {
             dto.setUserName(p.getUser().getUsername());
         }
 
-        dto.setAverageRating(reviewStatsPort.averageRating(p.getId()));
-        dto.setReviewCount(reviewStatsPort.count(p.getId()));
+        dto.setAverageRating(p.getAverageRating() != null ? p.getAverageRating() : 0.0);
+        dto.setReviewCount(p.getReviewCount() != null ? p.getReviewCount() : 0L);
 
         return dto;
     }

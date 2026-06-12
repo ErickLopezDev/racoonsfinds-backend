@@ -12,9 +12,11 @@ import com.racoonsfinds.backend.shared.exception.ConflictException;
 import com.racoonsfinds.backend.shared.exception.NotFoundException;
 import com.racoonsfinds.backend.shared.utils.AuthUtil;
 import com.racoonsfinds.backend.review.mapper.ReviewMapper;
+import com.racoonsfinds.backend.shared.event.ReviewStatsChangedEvent;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,6 +30,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
     private final ProductCatalogPort productCatalogPort;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     @Transactional
@@ -57,7 +60,20 @@ public class ReviewServiceImpl implements ReviewService {
         review.setComment(request.getComment());
         review.setDate(LocalDate.now());
 
-        return ReviewMapper.map(reviewRepository.save(review), ReviewResponseDto.class);
+        ReviewResponseDto response = ReviewMapper.map(reviewRepository.save(review), ReviewResponseDto.class);
+
+        publishStatsChanged(request.getProductId());
+
+        return response;
+    }
+
+    private void publishStatsChanged(Long productId) {
+        Double average = reviewRepository.findAverageRatingByProductId(productId);
+        Long count = reviewRepository.countByProductId(productId);
+        eventPublisher.publishEvent(new ReviewStatsChangedEvent(
+                productId,
+                average != null ? average : 0.0,
+                count != null ? count : 0L));
     }
 
     @Override

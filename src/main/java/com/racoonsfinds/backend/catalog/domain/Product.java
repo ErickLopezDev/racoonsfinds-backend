@@ -46,6 +46,12 @@ public class Product {
     @Column(name = "eliminado")
     private Boolean eliminado;
 
+    @Column(name = "average_rating")
+    private Double averageRating;
+
+    @Column(name = "review_count")
+    private Long reviewCount;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
