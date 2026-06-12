@@ -8,6 +8,22 @@
 
 ---
 
+## 0. TL;DR — estado al 2026-06-12 (monolito modular COMPLETO)
+
+El monolito modular **ya está terminado** y va más allá: se eliminó también el acoplamiento de datos (FKs JPA), dejándolo listo para partir DBs/microservicios.
+
+- **Guardrail:** se eligió **Spring Modulith** (no ArchUnit). `ModularityTests.verify()` valida bordes sin ciclos en cada build.
+- **Los 4 cruces de servicio rotos por puertos:**
+  - #1 catalog→identity: `UserDirectoryPort` + `LocalUserDirectoryAdapter` (resuelve vendedor/usernames, batch `findAllByIds` sin N+1).
+  - #2 catalog→review: **resuelto por evento de dominio** (`ReviewStatsChangedEvent` en `shared` → `ReviewStatsListener` en catalog denormaliza `averageRating`/`reviewCount`). Se prefirió eventos sobre `ReviewStatsPort`.
+  - #3 review→catalog: `ReviewServiceImpl` usa `ProductCatalogPort`.
+  - #4 order→cart: `CartPort` + `CartItemSnapshot` + `LocalCartAdapter`.
+- **FKs cross-module a nivel entidad eliminadas** (§3): todo `@ManyToOne` entre dominios → `Long` ID plano. Cada tabla queda auto-contenida. Order denormaliza `productName`/`sellerId` al comprar.
+- **Tests:** 44 verdes + `ModularityTests`.
+- **Pendiente real:** DDL manual en prod para columnas nuevas (`products.average_rating/review_count`, `purchase_details.product_name/seller_id`). Lo demás mantuvo el nombre de columna → sin DDL. Próxima liga: `PLAN.MS.md` Fases 5-6 (extracción física, sagas/outbox, RabbitMQ).
+
+---
+
 ## 1. Estado actual del desacoplamiento
 
 El repo **ya empezó** la separación con el patrón **Port & Adapter**:
@@ -59,7 +75,12 @@ Leyenda: ✓ = dependencia propia del módulo · ⚠️ = acoplamiento cruzado a
 
 ---
 
-## 3. Acoplamiento a nivel de entidad (JPA @ManyToOne)
+## 3. Acoplamiento a nivel de entidad (JPA @ManyToOne) — ✅ RESUELTO (2026-06-12)
+
+> **Estado:** todos los `@ManyToOne` cruzados (⚠️) de la tabla de abajo fueron convertidos
+> a columnas `Long` planas (mismo nombre de columna → sin DDL salvo las denormalizadas).
+> Quedan solo las relaciones internas de cada módulo (✓). La tabla se conserva como
+> referencia histórica del antes.
 
 Esto NO bloquea el monolito modular, pero SÍ la separación de base de datos (Fase 4 de `PLAN.MS.md`).
 
@@ -179,18 +200,19 @@ Estas reglas vienen del refactor de junio 2026 y deben mantenerse intactas duran
 
 ## 9. Tareas (servicios a migrar)
 
-- [ ] **Fase 0 — Guardrails:** instalar ArchUnit (o Spring Modulith) + reglas de §7. Decidir cuál.
-- [ ] **Romper cruce #3** — `ReviewServiceImpl` usa `ProductCatalogPort` en vez de `ProductRepository`.
-- [ ] **Romper cruce #1** — `UserDirectoryPort` + adapter (identity); `ProductServiceImpl` lo consume.
-- [ ] **Romper cruce #2** — `ReviewStatsPort` + adapter (review); `ProductServiceImpl` lo consume.
-- [ ] **Romper cruce #4** — `CartPort` + adapter (cart); `PurchaseServiceImpl` lo consume.
-- [ ] **Migrar `notification`** (módulo 1) — mover a paquete + ArchUnit + tests verdes.
-- [ ] **Migrar `identity`** (módulo 2) — mover + API pública + tests.
-- [ ] **Migrar `review`** (módulo 3).
-- [ ] **Migrar `catalog`** (módulo 4).
-- [ ] **Migrar `cart` y `wishlist`** (módulo 5).
-- [ ] **Migrar `order`** (módulo 6, último).
-- [ ] **(Diferido, Fase 3 PLAN.MS)** reemplazar cruces por eventos de dominio donde aplique (catalog↔review).
+- [x] ~~**Fase 0 — Guardrails:** instalar ArchUnit (o Spring Modulith) + reglas de §7. Decidir cuál.~~ → **Spring Modulith** (`ModularityTests.verify()`).
+- [x] ~~**Romper cruce #3** — `ReviewServiceImpl` usa `ProductCatalogPort` en vez de `ProductRepository`.~~
+- [x] ~~**Romper cruce #1** — `UserDirectoryPort` + adapter (identity); `ProductServiceImpl` lo consume.~~
+- [x] ~~**Romper cruce #2** — `ReviewStatsPort` + adapter (review); `ProductServiceImpl` lo consume.~~ → resuelto por **evento de dominio** (`ReviewStatsChangedEvent`), no por port.
+- [x] ~~**Romper cruce #4** — `CartPort` + adapter (cart); `PurchaseServiceImpl` lo consume.~~
+- [x] ~~**Migrar `notification`** (módulo 1).~~
+- [x] ~~**Migrar `identity`** (módulo 2).~~
+- [x] ~~**Migrar `review`** (módulo 3).~~
+- [x] ~~**Migrar `catalog`** (módulo 4).~~
+- [x] ~~**Migrar `cart` y `wishlist`** (módulo 5).~~
+- [x] ~~**Migrar `order`** (módulo 6, último).~~
+- [x] ~~**(Diferido, Fase 3 PLAN.MS)** reemplazar cruces por eventos de dominio donde aplique (catalog↔review).~~ → hecho (catalog escucha `ReviewStatsChangedEvent`).
+- [x] **(Extra, Fase 4 PLAN.MS)** eliminar FKs JPA cross-module → IDs `Long` planos (§3). Tablas auto-contenidas.
 
 > Cada tarea deja el sistema compilando y con la suite (`./mvnw.cmd test`) en verde.
 > No extraer a microservicio ninguna pieza hasta que su acoplamiento de datos esté resuelto.
