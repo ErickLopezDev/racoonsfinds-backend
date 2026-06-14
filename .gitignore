@@ -35,3 +35,10 @@ build/
 
 ### Claude ###
 .claude/
+
+### Apuntes / planes / TODOs personales (no publicar) ###
+*.todo.md
+*.plan.md
+PLAN.*.md
+AUDIT.*.md
+PROJECT.PRESENTATION.md
