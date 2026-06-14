@@ -34,7 +34,7 @@ review guarda solo el id del producto. Cuando necesita mostrar el nombre del pro
 ```mermaid
 flowchart LR
     subgraph antes[Antes: FK cross-module]
-        R1[Review] -->|@ManyToOne| P1[Product]
+        R1[Review] -->|relacion ManyToOne| P1[Product]
     end
     subgraph despues[Despues: id plano + puerto]
         R2[Review<br/>productId: Long] -.resuelve via.-> Port[ProductCatalogPort]
