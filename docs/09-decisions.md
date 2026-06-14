@@ -1,31 +1,74 @@
-# 09 · Decisiones y trade-offs
+# 09 - Decisiones y trade-offs
 
-> **Estado:** esqueleto — plan de contenido. Pendiente de redactar.
+Este documento es una bitacora de las decisiones de diseno, al estilo de un registro ligero de decisiones de arquitectura (ADR). La idea la tome de la practica de dejar por escrito no solo que se decidio, sino por que y que se descarto, para que dentro de unos meses (o quien lea el repo) entienda el razonamiento y no solo el resultado.
 
-Bitácora de decisiones (estilo ADR ligero): qué se decidió, por qué, y qué se descartó.
+Cada entrada sigue el mismo formato: contexto, decision, alternativa descartada y el trade-off que acepte.
 
-## Formato sugerido por entrada
+## ADR-01 - Monolito modular antes que microservicios
 
-Para cada decisión: **Contexto** · **Decisión** · **Alternativas descartadas** · **Trade-off aceptado** · **Estado**.
+- Contexto: el sistema tiene varios dominios que interactuan y eventualmente podrian escalar por separado.
+- Decision: empezar por un monolito modular con limites estrictos.
+- Alternativa descartada: microservicios desde el dia uno.
+- Trade-off: renuncio al despliegue y escalado independiente por ahora, a cambio de no pagar latencia de red, consistencia distribuida ni complejidad operacional antes de necesitarla. Es la idea de DDIA de no introducir complejidad distribuida hasta que un problema real la justifique.
 
-## Decisiones a documentar
+## ADR-02 - Limites verificados por Spring Modulith
 
-- **ADR-01 — Monolito modular en vez de microservicios desde el día 1.** Trade-off: 80% del beneficio (límites claros, extracción futura) con 20% del costo (sin latencia de red ni consistencia distribuida todavía).
-- **ADR-02 — Boundaries verificados por Spring Modulith.** Alternativa: convención + revisión humana. Trade-off: build acoplado a la herramienta a cambio de límites ejecutables.
-- **ADR-03 — Comunicación cross-module por eventos + puertos.** Alternativa: llamadas directas a servicios de otros módulos. Trade-off: indirección a cambio de desacople real.
-- **ADR-04 — FKs cross-module como IDs planos, no relaciones JPA.** Trade-off: resolver nombres vía puerto (más código) a cambio de poder extraer el módulo.
-- **ADR-05 — Denormalizar rating sobre Product vía evento.** Trade-off: consistencia eventual + duplicación a cambio de lecturas locales.
-- **ADR-06 — Testcontainers (Postgres real) en vez de H2.** Trade-off: tests más lentos + Docker requerido a cambio de paridad con prod.
-- **ADR-07 — Runtime Docker sobre `jdk-jammy` (no JRE slim).** Trade-off: imagen más pesada, decisión consciente del autor.
-- **ADR-08 — Saga para `order/payment/stock` (futuro).** Alternativa: 2PC. Trade-off: complejidad de compensaciones a cambio de no acoplar servicios.
+- Contexto: los limites entre modulos se erosionan si nada los hace cumplir.
+- Decision: verificar la estructura modular en un test que rompe el build ante violaciones.
+- Alternativa descartada: confiar en la convencion y la revision de codigo.
+- Trade-off: acoplo el build a una herramienta, a cambio de limites ejecutables que no dependen de la disciplina humana.
 
-## Decisiones aún abiertas
+## ADR-03 - Comunicacion cross-module por puertos y eventos
 
-- Observabilidad en AWS: self-managed vs AMP+AMG.
-- DB: RDS estándar vs Aurora Serverless v2.
-- Deploy: rolling vs blue/green.
-- Migraciones: introducir Flyway/Liquibase.
+- Contexto: los modulos necesitan datos y reaccionar a hechos de otros modulos.
+- Decision: para datos sincronos, puertos (interfaces); para hechos, eventos de dominio en un lugar neutro (shared).
+- Alternativa descartada: llamar directamente a los servicios de otros modulos.
+- Trade-off: una capa de indireccion mas, a cambio de desacople real y de costuras claras por donde extraer servicios.
 
-## Enlaces
+## ADR-04 - FKs cross-module como IDs planos
 
-- Contexto de cada una repartido en → [01](01-architecture.md), [02](02-domain-events.md), [08](08-roadmap-microservices.md)
+- Contexto: las relaciones JPA hacia entidades de otros modulos generan foreign keys cruzadas y acoplan los esquemas.
+- Decision: guardar el id plano (Long) y resolver el resto via puerto.
+- Alternativa descartada: relaciones `@ManyToOne` entre entidades de distintos modulos.
+- Trade-off: un poco mas de codigo para resolver nombres, a cambio de poder separar el modulo sin desarmar el modelo de datos.
+
+## ADR-05 - Denormalizar el rating sobre Product via evento
+
+- Contexto: el catalogo necesita mostrar el rating, que nace en review.
+- Decision: mantener una copia agregada (averageRating, reviewCount) sobre Product, actualizada por un listener de evento.
+- Alternativa descartada: hacer un join o llamar a review en cada lectura del catalogo.
+- Trade-off: duplicacion y consistencia eventual, a cambio de lecturas locales y rapidas que no dependen de review. Es el patron de dato derivado de DDIA.
+
+## ADR-06 - Testcontainers con Postgres real, no H2
+
+- Contexto: los tests de integracion deben dar confianza sobre el comportamiento en produccion.
+- Decision: probar contra un Postgres real levantado en Docker.
+- Alternativa descartada: H2 en memoria.
+- Trade-off: tests mas lentos y dependencia de Docker, a cambio de paridad real con produccion (dialecto, agregaciones, transacciones).
+
+## ADR-07 - Runtime Docker sobre JDK, no JRE slim
+
+- Contexto: la imagen de runtime podria ser mas chica con una base JRE.
+- Decision: mantener `eclipse-temurin:21-jdk-jammy` por ahora.
+- Alternativa descartada: pasar a una imagen JRE slim.
+- Trade-off: imagen mas pesada, a cambio de simplicidad. Es una optimizacion disponible, no un olvido.
+
+## ADR-08 - Saga para orden/pago/stock (futuro)
+
+- Contexto: confirmar una compra cruza tres dominios que en microservicios estarian separados.
+- Decision (planeada): coordinar la operacion con una saga de pasos compensables.
+- Alternativa descartada: una transaccion distribuida (2PC).
+- Trade-off: complejidad de compensaciones, a cambio de no acoplar los servicios con una transaccion global.
+
+## Decisiones aun abiertas
+
+- Migraciones de esquema: introducir Flyway o Liquibase en vez de derivar el esquema con Hibernate.
+- Endurecer Actuator: limitar endpoints y/o puerto de management separado.
+- Observabilidad en AWS: self-managed (Prometheus/Grafana en ECS) vs managed (AMP + AMG).
+- Base en la nube: RDS estandar vs Aurora Serverless v2.
+- Estrategia de despliegue: rolling update vs blue/green.
+- Imagen base: si se concreta el paso a JRE slim (ADR-07).
+
+## Para seguir
+
+- El contexto de cada decision esta repartido en [01](01-architecture.md), [02](02-domain-events.md) y [08](08-roadmap-microservices.md).
