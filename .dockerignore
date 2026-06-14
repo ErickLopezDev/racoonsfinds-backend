@@ -1,0 +1,31 @@
+# Artefactos de build
+target/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docs y planes
+*.md
+docs*
+*.todo.md
+
+# Secretos y entorno local
+.env
+.env.*
+
+# Infra
+infra/
+
+# IDE / editor
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# OS
+.DS_Store
+Thumbs.db
