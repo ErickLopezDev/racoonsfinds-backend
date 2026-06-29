@@ -2,7 +2,6 @@ package com.racoonsfinds.backend.platform.email;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import com.racoonsfinds.backend.platform.email.EmailService;
 import com.resend.Resend;
 import com.resend.services.emails.model.CreateEmailOptions;
 

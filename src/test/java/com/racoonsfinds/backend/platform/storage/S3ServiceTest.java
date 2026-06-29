@@ -20,11 +20,11 @@ class S3ServiceTest {
 
     @Mock private S3Client s3Client;
 
-    private S3Service s3Service;
+    private S3ServiceImpl s3Service;
 
     @BeforeEach
     void setup() {
-        s3Service = new S3Service(s3Client);
+        s3Service = new S3ServiceImpl(s3Client);
         ReflectionTestUtils.setField(s3Service, "bucket", "test-bucket");
         ReflectionTestUtils.setField(s3Service, "region", "us-east-1");
     }
